@@ -105,10 +105,12 @@ check_route() {
     return 12
   fi
 
-  if printf '%s' "$body" | rg -q "Plesk service page|The webserver is alive"; then
-    echo "Fallo: Apache está sirviendo la página interna de Plesk en ${url}"
-    return 13
-  fi
+  case "$body" in
+    *"Plesk service page"*|*"The webserver is alive"*)
+      echo "Fallo: Apache está sirviendo la página interna de Plesk en ${url}"
+      return 13
+      ;;
+  esac
 
   return 0
 }
@@ -121,9 +123,9 @@ should_fallback_to_http() {
   if [[ "$HEALTHCHECK_CONNECT_IP" != "127.0.0.1" && "$HEALTHCHECK_CONNECT_IP" != "::1" ]]; then
     return 1
   fi
-  if printf '%s' "$message" | rg -q "wrong version number"; then
-    return 0
-  fi
+  case "$message" in
+    *"wrong version number"*) return 0 ;;
+  esac
   return 1
 }
 
