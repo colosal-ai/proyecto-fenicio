@@ -29,6 +29,9 @@ npm run dev
 
 - **SSH manual dentro del servidor (recomendado para operación diaria):**
   - `npm run deploy:server`
+  - Si `npm` no está en `PATH` (típico en Plesk), usa:
+    - `/opt/plesk/node/24/bin/npm run deploy:server`
+    - fallback: `/opt/plesk/node/22/bin/npm run deploy:server`
 - **Solo actualizar repo + dependencias (sin build/deploy):**
   - `npm run pull:install`
 - **Desde tu máquina local hacia servidor (SSH root, ejecución remota como `fenicio.es`):**
