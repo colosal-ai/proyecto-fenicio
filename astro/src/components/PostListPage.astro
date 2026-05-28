@@ -1,0 +1,61 @@
+---
+interface PostItem {
+  slug: string;
+  title: string;
+  publishedAt?: string;
+  thumbnailUrl?: string;
+  excerpt?: string;
+  youtubeUrl?: string;
+}
+
+interface Props {
+  posts: PostItem[];
+  totalPosts: number;
+  currentPage: number;
+  totalPages: number;
+  basePath: string;
+}
+
+const { posts, totalPosts, currentPage, totalPages, basePath } = Astro.props as Props;
+const normalizedBasePath = basePath.endsWith("/") ? basePath : `${basePath}/`;
+const prevHref =
+  currentPage <= 2 ? normalizedBasePath : `${normalizedBasePath}page/${currentPage - 1}/`;
+const nextHref =
+  currentPage < totalPages ? `${normalizedBasePath}page/${currentPage + 1}/` : "";
+---
+<section class="card">
+  <h1>Las noticias</h1>
+  <p>Total: {totalPosts}</p>
+  <div class="post-grid">
+    {posts.map((post) => (
+      <article class="post-card">
+        {post.thumbnailUrl && (
+          <a href={`/post/${post.slug}/`} class="post-thumb-link">
+            <img class="post-thumb" src={post.thumbnailUrl} alt={post.title} loading="lazy" />
+          </a>
+        )}
+        <h2><a href={`/post/${post.slug}/`}>{post.title}</a></h2>
+        {post.publishedAt && <p class="post-meta">{post.publishedAt}</p>}
+        {post.youtubeUrl && (
+          <p><a href={post.youtubeUrl} target="_blank" rel="noopener noreferrer">{post.youtubeUrl}</a></p>
+        )}
+        {post.excerpt && <p>{post.excerpt}</p>}
+      </article>
+    ))}
+  </div>
+  {totalPages > 1 && (
+    <nav class="pagination">
+      {currentPage > 1 ? (
+        <a class="pagination-link" href={prevHref}>Anterior</a>
+      ) : (
+        <span class="pagination-disabled">Inicio</span>
+      )}
+      <span class="pagination-current">Página {currentPage} de {totalPages}</span>
+      {nextHref ? (
+        <a class="pagination-link" href={nextHref}>Siguiente</a>
+      ) : (
+        <span class="pagination-disabled">Fin</span>
+      )}
+    </nav>
+  )}
+</section>

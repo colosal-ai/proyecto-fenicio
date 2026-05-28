@@ -7,6 +7,7 @@ REPO_DIR="$(cd "$ROOT_DIR/.." && pwd)"
 BRANCH="${DEPLOY_BRANCH:-main}"
 USE_NPM_CI="${USE_NPM_CI:-1}"
 DEPLOY_LOCAL="${DEPLOY_LOCAL:-0}"
+APPLY_OWNER_PERMS="${APPLY_OWNER_PERMS:-1}"
 DEFAULT_SSH_TARGET="root@vigorous-pike"
 DEFAULT_HTTPDOCS_PATH="/var/www/vhosts/fenicio.es/httpdocs"
 DEFAULT_DEPLOY_OWNER="fenicio.es"
@@ -77,9 +78,15 @@ echo "==> [4/5] Publicando en Plesk"
 if [[ "$DEPLOY_LOCAL" == "1" ]]; then
   echo "Modo local activado: copiando dist/ directamente a $PLESK_HTTPDOCS_PATH"
   rsync -av --delete "$ROOT_DIR/dist/" "$PLESK_HTTPDOCS_PATH/"
-  chown -R "${DEPLOY_OWNER}:${DEPLOY_GROUP}" "$PLESK_HTTPDOCS_PATH"
-  find "$PLESK_HTTPDOCS_PATH" -type d -exec chmod 755 {} \;
-  find "$PLESK_HTTPDOCS_PATH" -type f -exec chmod 644 {} \;
+  if [[ "$APPLY_OWNER_PERMS" == "1" ]]; then
+    if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
+      chown -R "${DEPLOY_OWNER}:${DEPLOY_GROUP}" "$PLESK_HTTPDOCS_PATH"
+      find "$PLESK_HTTPDOCS_PATH" -type d -exec chmod 755 {} \;
+      find "$PLESK_HTTPDOCS_PATH" -type f -exec chmod 644 {} \;
+    else
+      echo "APPLY_OWNER_PERMS=1 pero no eres root. Saltando chown/chmod."
+    fi
+  fi
 else
   PLESK_SSH_TARGET="$PLESK_SSH_TARGET" \
   PLESK_HTTPDOCS_PATH="$PLESK_HTTPDOCS_PATH" \
@@ -91,8 +98,10 @@ fi
 echo "==> [5/5] Verificación rápida remota"
 if [[ "$DEPLOY_LOCAL" == "1" ]]; then
   test -f "$PLESK_HTTPDOCS_PATH/index.html" && echo "index.html OK en destino"
+  HEALTHCHECK_CONNECT_IP="${HEALTHCHECK_CONNECT_IP:-127.0.0.1}" "$NPM_BIN" run healthcheck:local
 else
   ssh "$PLESK_SSH_TARGET" "test -f \"$PLESK_HTTPDOCS_PATH/index.html\" && echo 'index.html OK en destino'"
+  ssh "$PLESK_SSH_TARGET" "cd \"$ROOT_DIR\" && HEALTHCHECK_CONNECT_IP=\"${HEALTHCHECK_CONNECT_IP:-127.0.0.1}\" \"$NPM_BIN\" run healthcheck:local"
 fi
 
 echo "Despliegue completado correctamente."

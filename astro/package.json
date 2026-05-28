@@ -9,7 +9,11 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "healthcheck:local": "bash scripts/healthcheck-local.sh",
+    "pull:install": "bash scripts/pull-and-install.sh",
+    "deploy:server": "bash scripts/deploy-on-server.sh",
     "deploy:plesk": "bash scripts/deploy-plesk.sh",
+    "deploy:remote": "bash scripts/deploy-remote-ssh.sh",
     "deploy:full": "bash scripts/pull-and-deploy.sh",
     "prepare": "npm run sync:content && npm run vendorize:raw && npm run build"
   },
