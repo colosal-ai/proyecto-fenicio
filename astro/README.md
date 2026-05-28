@@ -2,6 +2,8 @@
 
 Objetivo: migrar el blog a Astro con salida estática para despliegue simple en Plesk, desacoplado de dependencias externas.
 
+El mirror Wix (`../www.fenicio.es/`, `../originals/`) está **congelado en Git**. `npm run prepare` y `npm run dev` **no** re-descargan el sitio; solo leen archivos locales. Re-crawl: `npm run sync` en la raíz del repo (excepcional).
+
 ## Comandos
 
 ```bash

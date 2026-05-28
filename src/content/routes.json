@@ -6,6 +6,12 @@
     "pageContent": "content/pages/blog.html"
   },
   {
+    "route": "/blog/page/2",
+    "title": "El Libro de Bitácora | Fenicio",
+    "sourceHtml": "blog/page/2.html",
+    "pageContent": "content/pages/blog/page/2.html"
+  },
+  {
     "route": "/contacto",
     "title": "Únete | Fenicio",
     "sourceHtml": "contacto.html",
