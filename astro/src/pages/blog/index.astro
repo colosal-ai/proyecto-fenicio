@@ -1,0 +1,17 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import posts from "../../data/posts.json";
+
+const sortedPosts = [...posts].sort((a, b) => a.title.localeCompare(b.title, "es"));
+---
+<BaseLayout title="Fenicio - Blog">
+  <section class="card">
+    <h1>Blog</h1>
+    <p>Total: {sortedPosts.length}</p>
+    <ul class="post-list">
+      {sortedPosts.map((post) => (
+        <li><a href={`/post/${post.slug}/`}>{post.title}</a></li>
+      ))}
+    </ul>
+  </section>
+</BaseLayout>

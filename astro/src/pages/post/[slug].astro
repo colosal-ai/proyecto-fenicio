@@ -1,0 +1,20 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import posts from "../../data/posts.json";
+
+export function getStaticPaths() {
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { post }
+  }));
+}
+
+const { post } = Astro.props;
+---
+<BaseLayout title={post.title}>
+  <article class="card">
+    <h1>{post.title}</h1>
+    <p><a href="/blog/">Volver al blog</a></p>
+    <section set:html={post.contentHtml} />
+  </article>
+</BaseLayout>

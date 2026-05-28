@@ -1,0 +1,16 @@
+{
+  "name": "fenicio-astro",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync:content": "node scripts/import-from-mirror.mjs",
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "prepare": "npm run sync:content && npm run build"
+  },
+  "dependencies": {
+    "astro": "^5.8.0"
+  }
+}
