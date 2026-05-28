@@ -1,0 +1,52 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import posts from "../../../data/posts.json";
+
+const POSTS_PER_PAGE = 5;
+const totalPages = Math.max(1, Math.ceil(posts.length / POSTS_PER_PAGE));
+
+export function getStaticPaths() {
+  const postsPerPage = 5;
+  const pages = Math.max(1, Math.ceil(posts.length / postsPerPage));
+  return Array.from({ length: pages - 1 }, (_, index) => {
+    const page = index + 2;
+    return { params: { page: String(page) } };
+  });
+}
+
+const pageNumber = Number.parseInt(Astro.params.page || "2", 10);
+const safePage = Number.isNaN(pageNumber) ? 2 : Math.min(Math.max(pageNumber, 2), totalPages);
+const start = (safePage - 1) * POSTS_PER_PAGE;
+const end = start + POSTS_PER_PAGE;
+const pagePosts = posts.slice(start, end);
+const prevHref = safePage === 2 ? "/blog/todos/" : `/blog/todos/page/${safePage - 1}/`;
+const nextHref = safePage < totalPages ? `/blog/todos/page/${safePage + 1}/` : "";
+---
+<BaseLayout title={`Fenicio - Blog (Todos, página ${safePage})`}>
+  <section class="card">
+    <h1>Las noticias</h1>
+    <p>Total: {posts.length}</p>
+    <div class="post-grid">
+      {pagePosts.map((post) => (
+        <article class="post-card">
+          {post.thumbnailUrl && (
+            <a href={`/post/${post.slug}/`} class="post-thumb-link">
+              <img class="post-thumb" src={post.thumbnailUrl} alt={post.title} loading="lazy" />
+            </a>
+          )}
+          <h2><a href={`/post/${post.slug}/`}>{post.title}</a></h2>
+          {post.publishedAt && <p class="post-meta">{post.publishedAt}</p>}
+          {post.youtubeUrl && (
+            <p><a href={post.youtubeUrl} target="_blank" rel="noopener noreferrer">{post.youtubeUrl}</a></p>
+          )}
+          {post.excerpt && <p>{post.excerpt}</p>}
+        </article>
+      ))}
+    </div>
+    <nav class="pagination">
+      <a class="pagination-link" href={prevHref}>Anterior</a>
+      <span class="pagination-current">Página {safePage} de {totalPages}</span>
+      {nextHref ? <a class="pagination-link" href={nextHref}>Siguiente</a> : <span class="pagination-disabled">Fin</span>}
+    </nav>
+  </section>
+</BaseLayout>

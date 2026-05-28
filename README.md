@@ -1,6 +1,6 @@
 # fenicio.es (local mantenible)
 
-Replica local basada en mirror + pipeline de adaptacion para poder mantener el proyecto en Git con una estructura clara.
+Réplica local basada en mirror + pipeline de adaptación para poder mantener el proyecto en Git con una estructura clara.
 
 ## Flujo
 
@@ -10,17 +10,17 @@ Replica local basada en mirror + pipeline de adaptacion para poder mantener el p
    - Descarga/actualiza HTMLs en `www.fenicio.es/`.
 2. `npm run adapt`
    - Extrae `<body>` de cada HTML de `www.fenicio.es/`.
-   - Genera contenidos de pagina en `src/content/pages/`.
-   - Elimina runtime de scripts Wix del contenido para ejecucion local estatica.
-   - Reescribe enlaces internos a rutas canonicas locales.
+   - Genera contenidos de página en `src/content/pages/`.
+   - Elimina runtime de scripts Wix del contenido para ejecución local estática.
+   - Reescribe enlaces internos a rutas canónicas locales.
    - Genera inventario de rutas en `src/content/routes.json`.
 3. `npm run build`
    - Modo fidelidad visual: copia `www.fenicio.es/` a `dist/`.
-   - Localiza enlaces absolutos del dominio para mantener navegacion local.
+   - Localiza enlaces absolutos del dominio para mantener navegación local.
 4. `npm run dev`
    - Sirve `dist/` en `http://127.0.0.1:8080`.
 
-## Comandos rapidos
+## Comandos rápidos
 
 ```bash
 npm run prepare
@@ -37,7 +37,7 @@ scripts/
   dev-server.mjs
 src/
   content/routes.json
-  content/pages/        # contenido desacoplado por pagina (generado)
+  content/pages/        # contenido desacoplado por página (generado)
   public/styles.css
   templates/structure.html
   templates/page.html

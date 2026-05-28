@@ -1,0 +1,9 @@
+RewriteEngine On
+
+# Sirve archivos/directorios existentes sin reescritura
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Fallback a index.html para rutas limpias estáticas
+RewriteRule ^(.*)$ /$1/index.html [L]

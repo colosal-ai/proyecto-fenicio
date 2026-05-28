@@ -1,6 +1,6 @@
-# Astro migration line
+# Línea de migración Astro
 
-Objetivo: migrar el blog a Astro con salida estatica para despliegue simple en Plesk.
+Objetivo: migrar el blog a Astro con salida estática para despliegue simple en Plesk, desacoplado de dependencias externas.
 
 ## Comandos
 
@@ -11,16 +11,38 @@ npm run prepare
 npm run dev
 ```
 
+`npm run prepare` ahora:
+
+1. Importa posts desde el mirror local.
+2. Copia `www.fenicio.es` a `public/raw`.
+3. Descarga assets externos a `public/vendor`.
+4. Reescribe enlaces para servir local y elimina runtime de scripts.
+5. Genera build estática Astro.
+
 ## Despliegue en Plesk
 
 1. Ejecuta `npm run build` en `astro/`.
 2. Sube el contenido de `astro/dist/` al `httpdocs` del dominio/subdominio en Plesk.
-3. Asegura fallback de rutas:
-   - si usas Apache, activa `AllowOverride` y usa `.htaccess` para rutas limpias.
-   - alternativa simple: servir enlaces con slash final (`/post/slug/`) como ya genera Astro.
+3. El proyecto incluye `public/.htaccess` para fallback de rutas limpias en Apache.
+
+### Despliegue automático por SSH (rsync)
+
+```bash
+cd astro
+export PLESK_SSH_TARGET="usuario@host"
+export PLESK_HTTPDOCS_PATH="/var/www/vhosts/tu-dominio/httpdocs"
+npm run deploy:plesk
+```
 
 ## Fuente de datos actual
 
 `scripts/import-from-mirror.mjs` importa posts desde:
 
 `../src/content/pages/post/*.html`
+
+## Desacople total (fidelidad visual)
+
+- `scripts/vendorize-raw.mjs` procesa `public/raw/**/*.html|css`.
+- Reescribe URLs de `fenicio.es`/`www.fenicio.es` a `/raw/...`.
+- Descarga recursos externos a `/vendor/...`.
+- Elimina `<script>` para evitar dependencia de runtime/API de Wix.

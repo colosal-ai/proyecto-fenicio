@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "sync:content": "node scripts/import-from-mirror.mjs",
+    "vendorize:raw": "node scripts/vendorize-raw.mjs",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "prepare": "npm run sync:content && npm run build"
+    "deploy:plesk": "bash scripts/deploy-plesk.sh",
+    "prepare": "npm run sync:content && npm run vendorize:raw && npm run build"
   },
   "dependencies": {
     "astro": "^5.8.0"

@@ -1,0 +1,37 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import posts from "../../../data/posts.json";
+
+const POSTS_PER_PAGE = 5;
+const totalPages = Math.max(1, Math.ceil(posts.length / POSTS_PER_PAGE));
+const pagePosts = posts.slice(0, POSTS_PER_PAGE);
+---
+<BaseLayout title="Fenicio - Blog (Todos)">
+  <section class="card">
+    <h1>Las noticias</h1>
+    <p>Total: {posts.length}</p>
+    <div class="post-grid">
+      {pagePosts.map((post) => (
+        <article class="post-card">
+          {post.thumbnailUrl && (
+            <a href={`/post/${post.slug}/`} class="post-thumb-link">
+              <img class="post-thumb" src={post.thumbnailUrl} alt={post.title} loading="lazy" />
+            </a>
+          )}
+          <h2><a href={`/post/${post.slug}/`}>{post.title}</a></h2>
+          {post.publishedAt && <p class="post-meta">{post.publishedAt}</p>}
+          {post.youtubeUrl && (
+            <p><a href={post.youtubeUrl} target="_blank" rel="noopener noreferrer">{post.youtubeUrl}</a></p>
+          )}
+          {post.excerpt && <p>{post.excerpt}</p>}
+        </article>
+      ))}
+    </div>
+    {totalPages > 1 && (
+      <nav class="pagination">
+        <span class="pagination-current">Página 1 de {totalPages}</span>
+        <a class="pagination-link" href="/blog/todos/page/2/">Siguiente</a>
+      </nav>
+    )}
+  </section>
+</BaseLayout>
