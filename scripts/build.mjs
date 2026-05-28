@@ -1,4 +1,4 @@
-import { cp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const ROOT = process.cwd();
@@ -34,6 +34,70 @@ function localizeDomains(html) {
     .replaceAll(`${ALT_SOURCE_DOMAIN}`, "/");
 }
 
+function extractTitle(html, fallback) {
+  const match = html.match(/<title>(.*?)<\/title>/is);
+  if (!match) return fallback;
+  return match[1].replace(/\s+/g, " ").trim();
+}
+
+function decodePostSlug(slug) {
+  try {
+    return decodeURIComponent(slug);
+  } catch {
+    return slug;
+  }
+}
+
+async function buildPostsIndex() {
+  const postDir = path.join(DIST_DIR, "post");
+  const postFiles = await walkHtmlFiles(postDir);
+
+  const posts = [];
+  for (const relative of postFiles) {
+    const slug = relative.replace(/\.html$/i, "").replace(/\\/g, "/");
+    const html = await readFile(path.join(postDir, relative), "utf-8");
+    const title = extractTitle(html, decodePostSlug(slug));
+    posts.push({ slug, title });
+  }
+
+  posts.sort((a, b) => a.title.localeCompare(b.title, "es"));
+
+  const listItems = posts
+    .map((post) => `<li><a href="/post/${post.slug}.html">${post.title}</a></li>`)
+    .join("\n");
+
+  const html = `<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Blog - Todos los articulos</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 24px; }
+      h1 { margin-bottom: 8px; }
+      p { color: #555; }
+      ul { line-height: 1.7; }
+      a { color: #0b5cff; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <h1>Blog - Todos los articulos</h1>
+    <p>Total: ${posts.length}</p>
+    <ul>
+      ${listItems}
+    </ul>
+  </body>
+</html>`;
+
+  await writeFile(path.join(DIST_DIR, "blog.html"), html, "utf-8");
+  await writeFile(path.join(DIST_DIR, "posts.html"), html, "utf-8");
+  await mkdir(path.join(DIST_DIR, "blog"), { recursive: true });
+  await mkdir(path.join(DIST_DIR, "posts"), { recursive: true });
+  await writeFile(path.join(DIST_DIR, "blog", "index.html"), html, "utf-8");
+  await writeFile(path.join(DIST_DIR, "posts", "index.html"), html, "utf-8");
+}
+
 async function main() {
   await rm(DIST_DIR, { recursive: true, force: true });
   await cp(RAW_SOURCE_DIR, DIST_DIR, { recursive: true });
@@ -52,6 +116,8 @@ async function main() {
     const html = await readFile(absolute, "utf-8");
     await writeFile(absolute, localizeDomains(html), "utf-8");
   }
+
+  await buildPostsIndex();
 
   console.log(`Build fidelidad generado en dist/. Paginas: ${htmlFiles.length}`);
 }
