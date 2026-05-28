@@ -5,6 +5,7 @@ HEALTHCHECK_SCHEME="${HEALTHCHECK_SCHEME:-https}"
 HEALTHCHECK_DOMAIN="${HEALTHCHECK_DOMAIN:-fenicio.es}"
 HEALTHCHECK_CONNECT_IP="${HEALTHCHECK_CONNECT_IP:-}"
 HEALTHCHECK_INSECURE_TLS="${HEALTHCHECK_INSECURE_TLS:-1}"
+EFFECTIVE_CONNECT_IP="${HEALTHCHECK_CONNECT_IP}"
 
 if [[ "$HEALTHCHECK_SCHEME" != "http" && "$HEALTHCHECK_SCHEME" != "https" ]]; then
   echo "HEALTHCHECK_SCHEME debe ser http o https"
@@ -13,14 +14,14 @@ fi
 
 build_connect_args() {
   local scheme="$1"
-  if [[ -z "$HEALTHCHECK_CONNECT_IP" ]]; then
+  if [[ -z "$EFFECTIVE_CONNECT_IP" ]]; then
     echo ""
     return 0
   fi
   if [[ "$scheme" == "https" ]]; then
-    echo "--connect-to ${HEALTHCHECK_DOMAIN}:443:${HEALTHCHECK_CONNECT_IP}:443"
+    echo "--connect-to ${HEALTHCHECK_DOMAIN}:443:${EFFECTIVE_CONNECT_IP}:443"
   else
-    echo "--connect-to ${HEALTHCHECK_DOMAIN}:80:${HEALTHCHECK_CONNECT_IP}:80"
+    echo "--connect-to ${HEALTHCHECK_DOMAIN}:80:${EFFECTIVE_CONNECT_IP}:80"
   fi
 }
 
@@ -129,6 +130,32 @@ should_fallback_to_http() {
   return 1
 }
 
+detect_domain_non_loopback_ip() {
+  local resolved
+  resolved="$(getent ahostsv4 "$HEALTHCHECK_DOMAIN" 2>/dev/null | awk '{print $1}' | awk '!seen[$0]++')"
+  if [[ -z "$resolved" ]]; then
+    return 1
+  fi
+  while IFS= read -r ip; do
+    if [[ "$ip" != "127.0.0.1" ]]; then
+      printf '%s\n' "$ip"
+      return 0
+    fi
+  done <<<"$resolved"
+  return 1
+}
+
+is_plesk_placeholder_error() {
+  local scheme="$1"
+  local path="$2"
+  local response
+  response="$(fetch_status_and_body "$scheme" "${scheme}://${HEALTHCHECK_DOMAIN}${path}")"
+  case "$response" in
+    *"Plesk service page"*|*"The webserver is alive"*) return 0 ;;
+  esac
+  return 1
+}
+
 run_checks_with_scheme() {
   local scheme="$1"
 
@@ -144,8 +171,21 @@ run_checks_with_scheme() {
 if ! run_checks_with_scheme "$HEALTHCHECK_SCHEME"; then
   last_error="$(fetch_status_and_body "$HEALTHCHECK_SCHEME" "${HEALTHCHECK_SCHEME}://${HEALTHCHECK_DOMAIN}/" | sed -n '1,5p' | tr '\n' ' ')"
   if should_fallback_to_http "$last_error"; then
-    echo "Aviso: TLS local no disponible en ${HEALTHCHECK_CONNECT_IP}. Reintentando healthcheck por HTTP."
-    run_checks_with_scheme "http"
+    echo "Aviso: TLS local no disponible en ${EFFECTIVE_CONNECT_IP:-<directo>}. Reintentando healthcheck por HTTP."
+    if ! run_checks_with_scheme "http"; then
+      if [[ "${EFFECTIVE_CONNECT_IP:-}" == "127.0.0.1" ]] && is_plesk_placeholder_error "http" "/"; then
+        detected_ip="$(detect_domain_non_loopback_ip || true)"
+        if [[ -n "${detected_ip:-}" ]]; then
+          echo "Aviso: 127.0.0.1 cae en vhost interno de Plesk. Reintentando con IP del dominio: ${detected_ip}"
+          EFFECTIVE_CONNECT_IP="$detected_ip"
+          run_checks_with_scheme "http"
+        else
+          exit 1
+        fi
+      else
+        exit 1
+      fi
+    fi
   else
     exit 1
   fi
