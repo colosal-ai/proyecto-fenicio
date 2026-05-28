@@ -50,6 +50,14 @@ cd astro
 npm run deploy:full
 ```
 
+El script limpia `astro/public/vendor/` antes de hacer `git pull` para evitar bloqueos por archivos generados modificados en servidor.
+
+Si ejecutas el script dentro del propio servidor Plesk (SSH local), evita el salto SSH remoto:
+
+```bash
+DEPLOY_LOCAL=1 npm run deploy:full
+```
+
 ## Fuente de datos actual
 
 `scripts/import-from-mirror.mjs` importa posts desde:

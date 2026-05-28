@@ -6,6 +6,7 @@ REPO_DIR="$(cd "$ROOT_DIR/.." && pwd)"
 
 BRANCH="${DEPLOY_BRANCH:-main}"
 USE_NPM_CI="${USE_NPM_CI:-1}"
+DEPLOY_LOCAL="${DEPLOY_LOCAL:-0}"
 DEFAULT_SSH_TARGET="root@vigorous-pike"
 DEFAULT_HTTPDOCS_PATH="/var/www/vhosts/fenicio.es/httpdocs"
 DEFAULT_DEPLOY_OWNER="fenicio.es"
@@ -42,6 +43,12 @@ echo "==> [1/5] Sincronizando repositorio (rama: ${BRANCH})"
 cd "$REPO_DIR"
 git fetch origin
 git checkout "$BRANCH"
+
+# Limpia artefactos generados que suelen mutar en servidor y bloquear git pull.
+echo "==> Limpieza previa de artefactos generados"
+git restore --worktree --staged astro/public/vendor || true
+git clean -fd astro/public/vendor || true
+
 git pull --ff-only origin "$BRANCH"
 
 echo "==> [2/5] Instalando dependencias"
@@ -67,13 +74,25 @@ echo "==> [3/5] Generando build (prepare)"
 "$NPM_BIN" run prepare
 
 echo "==> [4/5] Publicando en Plesk"
-PLESK_SSH_TARGET="$PLESK_SSH_TARGET" \
-PLESK_HTTPDOCS_PATH="$PLESK_HTTPDOCS_PATH" \
-DEPLOY_OWNER="$DEPLOY_OWNER" \
-DEPLOY_GROUP="$DEPLOY_GROUP" \
-  "$NPM_BIN" run deploy:plesk
+if [[ "$DEPLOY_LOCAL" == "1" ]]; then
+  echo "Modo local activado: copiando dist/ directamente a $PLESK_HTTPDOCS_PATH"
+  rsync -av --delete "$ROOT_DIR/dist/" "$PLESK_HTTPDOCS_PATH/"
+  chown -R "${DEPLOY_OWNER}:${DEPLOY_GROUP}" "$PLESK_HTTPDOCS_PATH"
+  find "$PLESK_HTTPDOCS_PATH" -type d -exec chmod 755 {} \;
+  find "$PLESK_HTTPDOCS_PATH" -type f -exec chmod 644 {} \;
+else
+  PLESK_SSH_TARGET="$PLESK_SSH_TARGET" \
+  PLESK_HTTPDOCS_PATH="$PLESK_HTTPDOCS_PATH" \
+  DEPLOY_OWNER="$DEPLOY_OWNER" \
+  DEPLOY_GROUP="$DEPLOY_GROUP" \
+    "$NPM_BIN" run deploy:plesk
+fi
 
 echo "==> [5/5] Verificación rápida remota"
-ssh "$PLESK_SSH_TARGET" "test -f \"$PLESK_HTTPDOCS_PATH/index.html\" && echo 'index.html OK en destino'"
+if [[ "$DEPLOY_LOCAL" == "1" ]]; then
+  test -f "$PLESK_HTTPDOCS_PATH/index.html" && echo "index.html OK en destino"
+else
+  ssh "$PLESK_SSH_TARGET" "test -f \"$PLESK_HTTPDOCS_PATH/index.html\" && echo 'index.html OK en destino'"
+fi
 
 echo "Despliegue completado correctamente."
