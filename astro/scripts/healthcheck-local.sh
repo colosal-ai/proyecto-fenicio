@@ -1,64 +1,70 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-HEALTHCHECK_SCHEME="${HEALTHCHECK_SCHEME:-https}"
+# Este check valida Apache local del servidor sin depender de DNS.
+# Fuerza Host header para enrutar al vhost correcto.
+HEALTHCHECK_SCHEME="${HEALTHCHECK_SCHEME:-http}"
 HEALTHCHECK_DOMAIN="${HEALTHCHECK_DOMAIN:-fenicio.es}"
 HEALTHCHECK_CONNECT_IP="${HEALTHCHECK_CONNECT_IP:-}"
-HEALTHCHECK_INSECURE_TLS="${HEALTHCHECK_INSECURE_TLS:-1}"
-EFFECTIVE_CONNECT_IP="${HEALTHCHECK_CONNECT_IP}"
+HEALTHCHECK_APACHE_IP="${HEALTHCHECK_APACHE_IP:-}"
 
 if [[ "$HEALTHCHECK_SCHEME" != "http" && "$HEALTHCHECK_SCHEME" != "https" ]]; then
   echo "HEALTHCHECK_SCHEME debe ser http o https"
   exit 1
 fi
 
-build_connect_args() {
-  local scheme="$1"
-  if [[ -z "$EFFECTIVE_CONNECT_IP" ]]; then
-    echo ""
+detect_domain_non_loopback_ip() {
+  if [[ -n "$HEALTHCHECK_APACHE_IP" ]]; then
+    printf '%s\n' "$HEALTHCHECK_APACHE_IP"
     return 0
   fi
-  if [[ "$scheme" == "https" ]]; then
-    echo "--connect-to ${HEALTHCHECK_DOMAIN}:443:${EFFECTIVE_CONNECT_IP}:443"
-  else
-    echo "--connect-to ${HEALTHCHECK_DOMAIN}:80:${EFFECTIVE_CONNECT_IP}:80"
-  fi
-}
 
-build_curl_args() {
-  local scheme="$1"
-  local args=(-sS)
-  if [[ "$scheme" == "https" && "$HEALTHCHECK_INSECURE_TLS" == "1" ]]; then
-    args+=(-k)
+  # Intenta IP local del host (sin loopback), útil cuando el dominio aún no resuelve externamente.
+  local ip
+  ip="$(hostname -I 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i!="127.0.0.1"){print $i; exit}}')"
+  if [[ -n "$ip" ]]; then
+    printf '%s\n' "$ip"
+    return 0
   fi
-  printf '%s\n' "${args[@]}"
+
+  # Fallback: resolución local del dominio si existe en /etc/hosts.
+  local resolved
+  resolved="$(getent ahostsv4 "$HEALTHCHECK_DOMAIN" 2>/dev/null | awk '{print $1}' | awk '!seen[$0]++')"
+  if [[ -z "${resolved:-}" ]]; then
+    return 1
+  fi
+  while IFS= read -r rip; do
+    if [[ "$rip" != "127.0.0.1" ]]; then
+      printf '%s\n' "$rip"
+      return 0
+    fi
+  done <<<"$resolved"
+  return 1
 }
 
 fetch_status_and_body() {
-  local scheme="$1"
-  local url="$2"
-  local header_file
-  local body_file
-  local error_file
-  local curl_rc
+  local base_url="$1"
+  local path="$2"
+  local url="${base_url}${path}"
+  local header_file body_file error_file curl_rc
   header_file="$(mktemp)"
   body_file="$(mktemp)"
   error_file="$(mktemp)"
 
-  local -a connect_args=()
-  local connect_arg_line
-  connect_arg_line="$(build_connect_args "$scheme")"
-  if [[ -n "$connect_arg_line" ]]; then
-    connect_args=($connect_arg_line)
+  local -a curl_args=(-sS -D "$header_file" -o "$body_file" -H "Host: ${HEALTHCHECK_DOMAIN}")
+  if [[ "$HEALTHCHECK_SCHEME" == "https" ]]; then
+    curl_args+=(-k)
+  fi
+  if [[ -n "$HEALTHCHECK_CONNECT_IP" ]]; then
+    if [[ "$HEALTHCHECK_SCHEME" == "https" ]]; then
+      curl_args+=(--connect-to "${HEALTHCHECK_DOMAIN}:443:${HEALTHCHECK_CONNECT_IP}:443")
+    else
+      curl_args+=(--connect-to "${HEALTHCHECK_DOMAIN}:80:${HEALTHCHECK_CONNECT_IP}:80")
+    fi
   fi
 
-  local -a curl_args=()
-  while IFS= read -r line; do
-    curl_args+=("$line")
-  done < <(build_curl_args "$scheme")
-
   set +e
-  curl "${curl_args[@]}" "${connect_args[@]}" -D "$header_file" -o "$body_file" "$url" 2>"$error_file"
+  curl "${curl_args[@]}" "$url" 2>"$error_file"
   curl_rc=$?
   set -e
   if [[ "$curl_rc" -ne 0 ]]; then
@@ -69,126 +75,59 @@ fetch_status_and_body() {
     return 0
   fi
 
-  local status
+  local status body
   status="$(awk 'toupper($1) ~ /^HTTP/ {code=$2} END {print code}' "$header_file")"
-  local body
   body="$(<"$body_file")"
   rm -f "$header_file" "$body_file" "$error_file"
-
   printf '%s\n' "$status"
   printf '%s' "$body"
 }
 
 check_route() {
-  local scheme="$1"
+  local base_url="$1"
   local path="$2"
-  local url="${scheme}://${HEALTHCHECK_DOMAIN}${path}"
-  echo "Healthcheck: ${url}"
+  local response first_line status body
+  echo "Healthcheck: ${base_url}${path} (Host: ${HEALTHCHECK_DOMAIN})"
 
-  local response
-  response="$(fetch_status_and_body "$scheme" "$url")"
-  local first_line status body
+  response="$(fetch_status_and_body "$base_url" "$path")"
   first_line="$(printf '%s' "$response" | sed -n '1p')"
-
   if [[ "$first_line" == "__CURL_ERROR__" ]]; then
-    local curl_rc err_text
-    curl_rc="$(printf '%s' "$response" | sed -n '2p')"
-    err_text="$(printf '%s' "$response" | sed '1,2d')"
-    echo "Fallo curl (${curl_rc}) en ${url}: ${err_text}"
-    return 11
+    echo "Fallo curl en ${base_url}${path}: $(printf '%s' "$response" | sed '1,2d' | tr '\n' ' ')"
+    return 1
   fi
 
   status="$first_line"
   body="$(printf '%s' "$response" | sed '1d')"
-
   if [[ "$status" != "200" && "$status" != "301" && "$status" != "302" ]]; then
-    echo "Fallo: status HTTP inesperado ${status} en ${url}"
-    return 12
+    echo "Fallo: status HTTP inesperado ${status} en ${base_url}${path}"
+    return 1
   fi
 
   case "$body" in
     *"Plesk service page"*|*"The webserver is alive"*)
-      echo "Fallo: Apache está sirviendo la página interna de Plesk en ${url}"
-      return 13
+      echo "Fallo: Apache está sirviendo la página interna de Plesk en ${base_url}${path}"
+      return 1
       ;;
   esac
 
   return 0
 }
 
-should_fallback_to_http() {
-  local message="$1"
-  if [[ "$HEALTHCHECK_SCHEME" != "https" ]]; then
-    return 1
-  fi
-  if [[ "$HEALTHCHECK_CONNECT_IP" != "127.0.0.1" && "$HEALTHCHECK_CONNECT_IP" != "::1" ]]; then
-    return 1
-  fi
-  case "$message" in
-    *"wrong version number"*) return 0 ;;
-  esac
-  return 1
-}
+# Comprobación local prioritaria: loopback HTTP con Host header.
+if check_route "http://127.0.0.1" "/" && check_route "http://127.0.0.1" "/blog/"; then
+  echo "Healthcheck OK: Apache local sirve correctamente el vhost ${HEALTHCHECK_DOMAIN}."
+  exit 0
+fi
 
-detect_domain_non_loopback_ip() {
-  local resolved
-  resolved="$(getent ahostsv4 "$HEALTHCHECK_DOMAIN" 2>/dev/null | awk '{print $1}' | awk '!seen[$0]++')"
-  if [[ -z "$resolved" ]]; then
-    return 1
-  fi
-  while IFS= read -r ip; do
-    if [[ "$ip" != "127.0.0.1" ]]; then
-      printf '%s\n' "$ip"
-      return 0
-    fi
-  done <<<"$resolved"
-  return 1
-}
-
-is_plesk_placeholder_error() {
-  local scheme="$1"
-  local path="$2"
-  local response
-  response="$(fetch_status_and_body "$scheme" "${scheme}://${HEALTHCHECK_DOMAIN}${path}")"
-  case "$response" in
-    *"Plesk service page"*|*"The webserver is alive"*) return 0 ;;
-  esac
-  return 1
-}
-
-run_checks_with_scheme() {
-  local scheme="$1"
-
-  if ! check_route "$scheme" "/"; then
-    return 1
-  fi
-  if ! check_route "$scheme" "/blog/"; then
-    return 1
-  fi
-  return 0
-}
-
-if ! run_checks_with_scheme "$HEALTHCHECK_SCHEME"; then
-  last_error="$(fetch_status_and_body "$HEALTHCHECK_SCHEME" "${HEALTHCHECK_SCHEME}://${HEALTHCHECK_DOMAIN}/" | sed -n '1,5p' | tr '\n' ' ')"
-  if should_fallback_to_http "$last_error"; then
-    echo "Aviso: TLS local no disponible en ${EFFECTIVE_CONNECT_IP:-<directo>}. Reintentando healthcheck por HTTP."
-    if ! run_checks_with_scheme "http"; then
-      if [[ "${EFFECTIVE_CONNECT_IP:-}" == "127.0.0.1" ]] && is_plesk_placeholder_error "http" "/"; then
-        detected_ip="$(detect_domain_non_loopback_ip || true)"
-        if [[ -n "${detected_ip:-}" ]]; then
-          echo "Aviso: 127.0.0.1 cae en vhost interno de Plesk. Reintentando con IP del dominio: ${detected_ip}"
-          EFFECTIVE_CONNECT_IP="$detected_ip"
-          run_checks_with_scheme "http"
-        else
-          exit 1
-        fi
-      else
-        exit 1
-      fi
-    fi
-  else
-    exit 1
+# Si loopback cae en vhost interno Plesk, prueba con IP no-loopback del servidor.
+fallback_ip="$(detect_domain_non_loopback_ip || true)"
+if [[ -n "${fallback_ip:-}" ]]; then
+  echo "Aviso: fallback a IP local/no-loopback ${fallback_ip}."
+  if check_route "http://${fallback_ip}" "/" && check_route "http://${fallback_ip}" "/blog/"; then
+    echo "Healthcheck OK: Apache sirve correctamente el vhost ${HEALTHCHECK_DOMAIN} por IP local."
+    exit 0
   fi
 fi
 
-echo "Healthcheck OK: despliegue visible por Apache (${HEALTHCHECK_DOMAIN})."
+echo "Fallo: no se pudo validar localmente el vhost ${HEALTHCHECK_DOMAIN} en Apache."
+exit 1

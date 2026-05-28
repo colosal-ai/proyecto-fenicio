@@ -32,6 +32,7 @@ npm run dev
   - Si `npm` no está en `PATH` (típico en Plesk), usa:
     - `/opt/plesk/node/24/bin/npm run deploy:server`
     - fallback: `/opt/plesk/node/22/bin/npm run deploy:server`
+  - El healthcheck verifica Apache en local (`127.0.0.1` + `Host: fenicio.es`) sin depender de DNS público.
 - **Solo actualizar repo + dependencias (sin build/deploy):**
   - `npm run pull:install`
 - **Desde tu máquina local hacia servidor (SSH root, ejecución remota como `fenicio.es`):**
@@ -125,6 +126,7 @@ Variables opcionales:
 - **Conectividad/healthcheck**
   - `PLESK_SSH_TARGET` (default: `root@vigorous-pike`)
   - `HEALTHCHECK_CONNECT_IP` (default: `127.0.0.1`)
+  - `HEALTHCHECK_APACHE_IP` (opcional; fuerza IP local/no-loopback para fallback de comprobación)
 - **Wrapper remoto local->servidor**
   - `REMOTE_ASTRO_DIR` (default: `/var/www/vhosts/fenicio.es/app/astro`)
   - `REMOTE_RUN_AS` (default: `fenicio.es`)
