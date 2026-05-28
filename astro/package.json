@@ -10,6 +10,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "deploy:plesk": "bash scripts/deploy-plesk.sh",
+    "deploy:full": "bash scripts/pull-and-deploy.sh",
     "prepare": "npm run sync:content && npm run vendorize:raw && npm run build"
   },
   "dependencies": {

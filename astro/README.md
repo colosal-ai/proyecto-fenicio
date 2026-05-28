@@ -29,9 +29,23 @@ npm run dev
 
 ```bash
 cd astro
-export PLESK_SSH_TARGET="usuario@host"
-export PLESK_HTTPDOCS_PATH="/var/www/vhosts/tu-dominio/httpdocs"
 npm run deploy:plesk
+```
+
+Valores por defecto ya configurados en scripts:
+
+- `PLESK_SSH_TARGET=root@vigorous-pike`
+- `PLESK_HTTPDOCS_PATH=/var/www/vhosts/fenicio.es/httpdocs`
+
+Si quieres sobrescribirlos puntualmente, exporta variables antes de ejecutar.
+
+### Pull + Build + Deploy en un solo paso
+
+```bash
+cd astro
+# opcional: export DEPLOY_BRANCH="main"
+# opcional: export USE_NPM_CI="1"
+npm run deploy:full
 ```
 
 ## Fuente de datos actual
