@@ -36,6 +36,8 @@ Valores por defecto ya configurados en scripts:
 
 - `PLESK_SSH_TARGET=root@vigorous-pike`
 - `PLESK_HTTPDOCS_PATH=/var/www/vhosts/fenicio.es/httpdocs`
+- `DEPLOY_OWNER=fenicio.es`
+- `DEPLOY_GROUP=psacln`
 
 Si quieres sobrescribirlos puntualmente, exporta variables antes de ejecutar.
 
