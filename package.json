@@ -1,0 +1,14 @@
+{
+  "name": "fenicio-es-local",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Replica mantenible de fenicio.es basada en mirror + adaptador local",
+  "type": "module",
+  "scripts": {
+    "sync": "bash scripts/sync.sh",
+    "adapt": "node scripts/adapt.mjs",
+    "build": "node scripts/build.mjs",
+    "prepare": "npm run adapt && npm run build",
+    "dev": "node scripts/dev-server.mjs"
+  }
+}

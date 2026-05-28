@@ -1,0 +1,158 @@
+[
+  {
+    "route": "/blog",
+    "title": "El Libro de Bitácora | Fenicio",
+    "sourceHtml": "blog.html",
+    "pageContent": "content/pages/blog.html"
+  },
+  {
+    "route": "/contacto",
+    "title": "Únete | Fenicio",
+    "sourceHtml": "contacto.html",
+    "pageContent": "content/pages/contacto.html"
+  },
+  {
+    "route": "/embarcación",
+    "title": "La Máquina | Fenicio",
+    "sourceHtml": "embarcación.html",
+    "pageContent": "content/pages/embarcación.html"
+  },
+  {
+    "route": "/equipo",
+    "title": "El Equipazo | Fenicio",
+    "sourceHtml": "equipo.html",
+    "pageContent": "content/pages/equipo.html"
+  },
+  {
+    "route": "/",
+    "title": "El Proyecto | Fenicio",
+    "sourceHtml": "index.html",
+    "pageContent": "content/pages/index.html"
+  },
+  {
+    "route": "/post/58-travesia-a-cabo-roig-trofeo-fernando-pedrera",
+    "title": "58° Travesia a Cabo Roig Trofeo Fernando Pedrera",
+    "sourceHtml": "post/58-travesia-a-cabo-roig-trofeo-fernando-pedrera.html",
+    "pageContent": "content/pages/post/58-travesia-a-cabo-roig-trofeo-fernando-pedrera.html"
+  },
+  {
+    "route": "/post/campeonato-autonómico-clase-crucero-orc",
+    "title": "Campeonato Autonómico Clase Crucero ORC",
+    "sourceHtml": "post/campeonato-autonómico-clase-crucero-orc.html",
+    "pageContent": "content/pages/post/campeonato-autonómico-clase-crucero-orc.html"
+  },
+  {
+    "route": "/post/canal-youtube-fenicio",
+    "title": "Canal Youtube Fenicio",
+    "sourceHtml": "post/canal-youtube-fenicio.html",
+    "pageContent": "content/pages/post/canal-youtube-fenicio.html"
+  },
+  {
+    "route": "/post/el-fenicio-a-toda-vela",
+    "title": "Navegando a Toda Vela!!",
+    "sourceHtml": "post/el-fenicio-a-toda-vela.html",
+    "pageContent": "content/pages/post/el-fenicio-a-toda-vela.html"
+  },
+  {
+    "route": "/post/el-fenicio-ataca-de-nuevo",
+    "title": "El Fenicio ataca de nuevo",
+    "sourceHtml": "post/el-fenicio-ataca-de-nuevo.html",
+    "pageContent": "content/pages/post/el-fenicio-ataca-de-nuevo.html"
+  },
+  {
+    "route": "/post/el-fenicio-campeón-autonómico-de-la-región-de-murcia",
+    "title": "El Fenicio Campeón Autonómico de la Región de Murcia",
+    "sourceHtml": "post/el-fenicio-campeón-autonómico-de-la-región-de-murcia.html",
+    "pageContent": "content/pages/post/el-fenicio-campeón-autonómico-de-la-región-de-murcia.html"
+  },
+  {
+    "route": "/post/el-fenicio-lo-ha-vuelto-a-conseguir-segundo-clasificado-del-trofeo-paraíso-salado",
+    "title": "El Fenicio lo ha vuelto a conseguir... Segundo clasificado del trofeo Paraíso Salado.",
+    "sourceHtml": "post/el-fenicio-lo-ha-vuelto-a-conseguir-segundo-clasificado-del-trofeo-paraíso-salado.html",
+    "pageContent": "content/pages/post/el-fenicio-lo-ha-vuelto-a-conseguir-segundo-clasificado-del-trofeo-paraíso-salado.html"
+  },
+  {
+    "route": "/post/el-fenicio-lo-ha-vuelto-a-hacer",
+    "title": "El Fenicio lo ha vuelto a hacer...",
+    "sourceHtml": "post/el-fenicio-lo-ha-vuelto-a-hacer.html",
+    "pageContent": "content/pages/post/el-fenicio-lo-ha-vuelto-a-hacer.html"
+  },
+  {
+    "route": "/post/el-fenicio-suma-y-sigue",
+    "title": "El Fenicio suma y sigue...",
+    "sourceHtml": "post/el-fenicio-suma-y-sigue.html",
+    "pageContent": "content/pages/post/el-fenicio-suma-y-sigue.html"
+  },
+  {
+    "route": "/post/el-fenicio-y-la-ruta-de-la-sal",
+    "title": "El Fenicio y La Ruta de la Sal",
+    "sourceHtml": "post/el-fenicio-y-la-ruta-de-la-sal.html",
+    "pageContent": "content/pages/post/el-fenicio-y-la-ruta-de-la-sal.html"
+  },
+  {
+    "route": "/post/fenicio-campeón",
+    "title": "Fenicio Campeón",
+    "sourceHtml": "post/fenicio-campeón.html",
+    "pageContent": "content/pages/post/fenicio-campeón.html"
+  },
+  {
+    "route": "/post/homenaje-al-mar-menor",
+    "title": "Homenaje al Mar Menor",
+    "sourceHtml": "post/homenaje-al-mar-menor.html",
+    "pageContent": "content/pages/post/homenaje-al-mar-menor.html"
+  },
+  {
+    "route": "/post/ii-trofeo-porto-chico-c-n-villa-de-san-pedro",
+    "title": "II Trofeo Porto Chico C.N. Villa de San Pedro.",
+    "sourceHtml": "post/ii-trofeo-porto-chico-c-n-villa-de-san-pedro.html",
+    "pageContent": "content/pages/post/ii-trofeo-porto-chico-c-n-villa-de-san-pedro.html"
+  },
+  {
+    "route": "/post/noche-toledana-en-la-ruta-de-la-sal",
+    "title": "“Noche Toledana” en la &quot;Ruta de la Sal&quot;",
+    "sourceHtml": "post/noche-toledana-en-la-ruta-de-la-sal.html",
+    "pageContent": "content/pages/post/noche-toledana-en-la-ruta-de-la-sal.html"
+  },
+  {
+    "route": "/post/primeras-imágenes-de-la-entrega-de-trofeos",
+    "title": "Primeras Imágenes de la &quot;Entrega de Trofeos&quot;",
+    "sourceHtml": "post/primeras-imágenes-de-la-entrega-de-trofeos.html",
+    "pageContent": "content/pages/post/primeras-imágenes-de-la-entrega-de-trofeos.html"
+  },
+  {
+    "route": "/post/puesta-en-marcha-del-sistema-de-retransmisión-en-directo-desde-la-embarcación-fenicio",
+    "title": "Puesta en marcha del sistema de retransmisión en directo desde la embarcación Fenicio",
+    "sourceHtml": "post/puesta-en-marcha-del-sistema-de-retransmisión-en-directo-desde-la-embarcación-fenicio.html",
+    "pageContent": "content/pages/post/puesta-en-marcha-del-sistema-de-retransmisión-en-directo-desde-la-embarcación-fenicio.html"
+  },
+  {
+    "route": "/post/regata-trofeo-villa-de-san-pedro",
+    "title": "Regata Trofeo Villa de San Pedro",
+    "sourceHtml": "post/regata-trofeo-villa-de-san-pedro.html",
+    "pageContent": "content/pages/post/regata-trofeo-villa-de-san-pedro.html"
+  },
+  {
+    "route": "/post/sique-al-fenicio-en-el-trofeo-tabarca-vela",
+    "title": "Sigue al Fenicio en el Trofeo Tabarca-Vela",
+    "sourceHtml": "post/sique-al-fenicio-en-el-trofeo-tabarca-vela.html",
+    "pageContent": "content/pages/post/sique-al-fenicio-en-el-trofeo-tabarca-vela.html"
+  },
+  {
+    "route": "/post/sábado-04-06-22-última-regata-del-xviii-trofeo-regularidad-club-náutico-villa-de-san-pedro",
+    "title": "Sábado 04/06/22 última regata del XVIII Trofeo Regularidad Club Náutico Villa de San Pedro",
+    "sourceHtml": "post/sábado-04-06-22-última-regata-del-xviii-trofeo-regularidad-club-náutico-villa-de-san-pedro.html",
+    "pageContent": "content/pages/post/sábado-04-06-22-última-regata-del-xviii-trofeo-regularidad-club-náutico-villa-de-san-pedro.html"
+  },
+  {
+    "route": "/post/tabarca-vela-en-directo-3-jornada",
+    "title": "Tabarca Vela en directo 3° jornada",
+    "sourceHtml": "post/tabarca-vela-en-directo-3-jornada.html",
+    "pageContent": "content/pages/post/tabarca-vela-en-directo-3-jornada.html"
+  },
+  {
+    "route": "/post/verano-de-éxitos-para-el-fenicio",
+    "title": "Verano de éxitos para el Fenicio",
+    "sourceHtml": "post/verano-de-éxitos-para-el-fenicio.html",
+    "pageContent": "content/pages/post/verano-de-éxitos-para-el-fenicio.html"
+  }
+]
