@@ -16,30 +16,62 @@ const MIME = {
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
   ".webp": "image/webp",
-  ".ico": "image/x-icon"
+  ".ico": "image/x-icon",
+  ".woff2": "font/woff2",
+  ".woff": "font/woff",
+  ".bin": "application/octet-stream"
 };
 
-function resolvePath(urlPath) {
+/** Rutas CDN hermanas del mirror (enlaces ../static.*.com desde dist/). */
+const ASSET_ROOTS = [
+  { prefix: "/static.parastorage.com", dir: path.join(ROOT, "static.parastorage.com") },
+  { prefix: "/static.wixstatic.com", dir: path.join(ROOT, "static.wixstatic.com") },
+  { prefix: "/originals", dir: path.join(ROOT, "originals") }
+];
+
+function resolveAssetPath(urlPath) {
+  for (const { prefix, dir } of ASSET_ROOTS) {
+    if (urlPath === prefix || urlPath.startsWith(`${prefix}/`)) {
+      const rel = urlPath.slice(prefix.length) || "/";
+      return path.normalize(path.join(dir, rel));
+    }
+  }
+  return null;
+}
+
+function resolveDistPath(urlPath) {
   const clean = decodeURIComponent(urlPath.split("?")[0]);
   const relative = clean === "/" ? "/index.html" : clean;
-  const fullPath = path.join(DIST_DIR, relative);
-  return path.normalize(fullPath);
+  return path.normalize(path.join(DIST_DIR, relative));
 }
 
 createServer(async (req, res) => {
   try {
-    const requested = resolvePath(req.url || "/");
-    if (!requested.startsWith(DIST_DIR)) {
+    const urlPath = decodeURIComponent((req.url || "/").split("?")[0]);
+
+    const assetPath = resolveAssetPath(urlPath);
+    if (assetPath) {
+      if (!ASSET_ROOTS.some(({ dir }) => assetPath.startsWith(dir))) {
+        res.writeHead(403);
+        res.end("Forbidden");
+        return;
+      }
+      const content = await readFile(assetPath);
+      const ext = path.extname(assetPath).toLowerCase();
+      res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });
+      res.end(content);
+      return;
+    }
+
+    let filePath = resolveDistPath(urlPath);
+    if (!filePath.startsWith(DIST_DIR)) {
       res.writeHead(403);
       res.end("Forbidden");
       return;
     }
 
-    let filePath = requested;
-    let fileStat;
-
     try {
-      fileStat = await stat(filePath);
+      const fileStat = await stat(filePath);
       if (fileStat.isDirectory()) {
         filePath = path.join(filePath, "index.html");
       }
@@ -49,8 +81,7 @@ createServer(async (req, res) => {
 
     const content = await readFile(filePath);
     const ext = path.extname(filePath).toLowerCase();
-    const type = MIME[ext] || "application/octet-stream";
-    res.writeHead(200, { "Content-Type": type });
+    res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });
     res.end(content);
   } catch {
     res.writeHead(404);
@@ -58,4 +89,5 @@ createServer(async (req, res) => {
   }
 }).listen(PORT, () => {
   console.log(`Servidor local en http://127.0.0.1:${PORT}`);
+  console.log("(Sirve dist/ + static.parastorage.com + static.wixstatic.com del mirror)");
 });

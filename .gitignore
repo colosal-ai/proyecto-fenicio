@@ -1,4 +1,5 @@
 node_modules/
+.mirror-staging/
 dist/
 *.log
 astro/.astro/

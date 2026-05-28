@@ -1,5 +1,6 @@
 https://www.fenicio.es
 https://www.fenicio.es/blog
+https://www.fenicio.es/blog/page/2
 https://www.fenicio.es/contacto
 https://www.fenicio.es/embarcación
 https://www.fenicio.es/equipo
