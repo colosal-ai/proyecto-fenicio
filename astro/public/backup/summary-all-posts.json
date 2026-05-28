@@ -1,0 +1,137 @@
+{
+  "generatedAt": "2026-05-28T11:02:52.502Z",
+  "totals": {
+    "posts": 21,
+    "urls": 45,
+    "downloaded": 45,
+    "failed": 0
+  },
+  "posts": [
+    {
+      "slug": "tabarca-vela-en-directo-3-jornada",
+      "urls": 0,
+      "downloaded": 0,
+      "failed": 0
+    },
+    {
+      "slug": "sique-al-fenicio-en-el-trofeo-tabarca-vela",
+      "urls": 0,
+      "downloaded": 0,
+      "failed": 0
+    },
+    {
+      "slug": "el-fenicio-ataca-de-nuevo",
+      "urls": 4,
+      "downloaded": 4,
+      "failed": 0
+    },
+    {
+      "slug": "el-fenicio-campeón-autonómico-de-la-región-de-murcia",
+      "urls": 3,
+      "downloaded": 3,
+      "failed": 0
+    },
+    {
+      "slug": "campeonato-autonómico-clase-crucero-orc",
+      "urls": 1,
+      "downloaded": 1,
+      "failed": 0
+    },
+    {
+      "slug": "puesta-en-marcha-del-sistema-de-retransmisión-en-directo-desde-la-embarcación-fenicio",
+      "urls": 1,
+      "downloaded": 1,
+      "failed": 0
+    },
+    {
+      "slug": "el-fenicio-suma-y-sigue",
+      "urls": 6,
+      "downloaded": 6,
+      "failed": 0
+    },
+    {
+      "slug": "verano-de-éxitos-para-el-fenicio",
+      "urls": 6,
+      "downloaded": 6,
+      "failed": 0
+    },
+    {
+      "slug": "58-travesia-a-cabo-roig-trofeo-fernando-pedrera",
+      "urls": 0,
+      "downloaded": 0,
+      "failed": 0
+    },
+    {
+      "slug": "ii-trofeo-porto-chico-c-n-villa-de-san-pedro",
+      "urls": 1,
+      "downloaded": 1,
+      "failed": 0
+    },
+    {
+      "slug": "el-fenicio-lo-ha-vuelto-a-conseguir-segundo-clasificado-del-trofeo-paraíso-salado",
+      "urls": 5,
+      "downloaded": 5,
+      "failed": 0
+    },
+    {
+      "slug": "primeras-imágenes-de-la-entrega-de-trofeos",
+      "urls": 7,
+      "downloaded": 7,
+      "failed": 0
+    },
+    {
+      "slug": "fenicio-campeón",
+      "urls": 1,
+      "downloaded": 1,
+      "failed": 0
+    },
+    {
+      "slug": "sábado-04-06-22-última-regata-del-xviii-trofeo-regularidad-club-náutico-villa-de-san-pedro",
+      "urls": 1,
+      "downloaded": 1,
+      "failed": 0
+    },
+    {
+      "slug": "homenaje-al-mar-menor",
+      "urls": 0,
+      "downloaded": 0,
+      "failed": 0
+    },
+    {
+      "slug": "noche-toledana-en-la-ruta-de-la-sal",
+      "urls": 0,
+      "downloaded": 0,
+      "failed": 0
+    },
+    {
+      "slug": "el-fenicio-a-toda-vela",
+      "urls": 0,
+      "downloaded": 0,
+      "failed": 0
+    },
+    {
+      "slug": "el-fenicio-lo-ha-vuelto-a-hacer",
+      "urls": 4,
+      "downloaded": 4,
+      "failed": 0
+    },
+    {
+      "slug": "regata-trofeo-villa-de-san-pedro",
+      "urls": 0,
+      "downloaded": 0,
+      "failed": 0
+    },
+    {
+      "slug": "el-fenicio-y-la-ruta-de-la-sal",
+      "urls": 5,
+      "downloaded": 5,
+      "failed": 0
+    },
+    {
+      "slug": "canal-youtube-fenicio",
+      "urls": 0,
+      "downloaded": 0,
+      "failed": 0
+    }
+  ]
+}

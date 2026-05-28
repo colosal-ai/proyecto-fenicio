@@ -7,6 +7,10 @@ const CONTENT_ROOT = path.resolve(ROOT, "../src/content/pages/post");
 const RAW_SOURCE_ROOT = path.resolve(ROOT, "../www.fenicio.es");
 const OUTPUT_FILE = path.resolve(ROOT, "src/data/posts.json");
 const RAW_PUBLIC_DIR = path.resolve(ROOT, "public/raw");
+const THUMBNAIL_OVERRIDES = {
+  "tabarca-vela-en-directo-3-jornada":
+    "344230_b90647a1dcb3472aaa7f62be57d52e3a~mv2.jpg"
+};
 
 async function listHtmlFiles(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -89,12 +93,15 @@ function localizeRichHtmlUrls(html) {
 function titleFromHtml(html, fallback) {
   const h1Match = html.match(/data-hook="post-title"[^>]*>\s*<h1[^>]*>([\s\S]*?)<\/h1>/i);
   if (h1Match) {
-    const fromH1 = stripTags(h1Match[1]);
+    const fromH1 = decodeEntities(stripTags(h1Match[1]));
     if (fromH1) return fromH1;
   }
   const match = html.match(/<title>(.*?)<\/title>/is);
   if (!match) return fallback;
-  return match[1].replace(/\s+/g, " ").replace(/\s*-\s*Fenicio.*$/i, "").trim();
+  return decodeEntities(match[1])
+    .replace(/\s+/g, " ")
+    .replace(/\s*-\s*Fenicio.*$/i, "")
+    .trim();
 }
 
 function stripTags(value) {
@@ -126,9 +133,25 @@ function cleanExcerptText(value) {
     .trim();
 }
 
-function postBodyHtml(html) {
+function postDescriptionHtml(html) {
   const section = html.match(/<section[^>]*data-hook="post-description"[^>]*>([\s\S]*?)<\/section>/i);
-  const base = section ? section[1] : html;
+  return section ? section[1] : "";
+}
+
+function wixAssetIdFromText(value = "") {
+  const m = value.match(/(344230_[A-Za-z0-9_.~-]+\.(?:jpg|jpeg|png|webp))/i);
+  return m ? m[1] : "";
+}
+
+function localBackupThumbnailUrl(slug, assetId) {
+  if (!slug || !assetId) return "";
+  const rel = `/backup/post/${encodeURIComponent(slug)}/maxres/${assetId}`;
+  const abs = path.resolve(ROOT, "public", rel.replace(/^\//, ""));
+  return existsSync(abs) ? rel : "";
+}
+
+function postBodyHtml(html) {
+  const base = postDescriptionHtml(html) || html;
   return localizeRichHtmlUrls(removeStyleAndScriptBlocks(base));
 }
 
@@ -153,10 +176,10 @@ function normalizeExcerpt(excerpt, title, youtubeUrl) {
 }
 
 function excerptFromHtml(html) {
-  const descriptionBlock = html.match(/<section[^>]*data-hook="post-description"[^>]*>([\s\S]*?)<\/section>/i);
-  if (descriptionBlock) {
+  const section = postDescriptionHtml(html);
+  if (section) {
     const fromBlock = cleanExcerptText(
-      decodeEntities(stripTags(removeStyleAndScriptBlocks(descriptionBlock[1])))
+      decodeEntities(stripTags(removeStyleAndScriptBlocks(section)))
     );
     if (fromBlock.length > 40) return fromBlock.slice(0, 280).trim();
   }
@@ -167,8 +190,23 @@ function excerptFromHtml(html) {
 }
 
 function youtubeFromHtml(html) {
-  const match = html.match(/https?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)[^"'\s<]+/i);
-  return match ? match[0] : "";
+  const source = postDescriptionHtml(html) || html;
+  const match = source.match(/https?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)[^"'\s<]+/i);
+  if (match) return match[0];
+
+  const ogImage = html.match(
+    /<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)["'][^>]+content=["']https?:\/\/i\.ytimg\.com\/vi\/([^/"']+)\/[^"']+["']/i
+  );
+  if (ogImage?.[1]) {
+    return `https://www.youtube.com/watch?v=${ogImage[1]}`;
+  }
+
+  const youtubeThumb = html.match(/https?:\/\/i\.ytimg\.com\/vi\/([^/"']+)\/[^"'\s<]+/i);
+  if (youtubeThumb?.[1]) {
+    return `https://www.youtube.com/watch?v=${youtubeThumb[1]}`;
+  }
+
+  return "";
 }
 
 function youtubeVideoId(url) {
@@ -190,6 +228,15 @@ function youtubeVideoId(url) {
   return "";
 }
 
+function youtubePosterFromUrl(url) {
+  const id = youtubeVideoId(url);
+  if (!id) return "";
+  if (url.includes("/live/")) {
+    return `https://i.ytimg.com/vi/${id}/maxresdefault_live.jpg`;
+  }
+  return `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+}
+
 function publishedFromHtml(html) {
   const titleAttr = html.match(/data-hook="time-ago"[^>]*title="([^"]+)"/i);
   if (titleAttr) return titleAttr[1].trim();
@@ -199,19 +246,26 @@ function publishedFromHtml(html) {
 }
 
 function thumbnailFromHtml(html) {
-  const imageInfo = html.match(/"imageData":\{"width":\d+,"height":\d+,"uri":"([^"]+)"/i);
+  const source = postDescriptionHtml(html) || html;
+  const imageInfo = source.match(/"imageData":\{"width":\d+,"height":\d+,"uri":"([^"]+)"/i);
   if (imageInfo) {
     const local = ensureLocalAsset(localVendorMediaUrl(imageInfo[1]));
     if (local) return local;
   }
-  const direct = html.match(/https?:\/\/static\.wixstatic\.com\/media\/[^"'\s<>]+/i);
+  const direct = source.match(/https?:\/\/static\.wixstatic\.com\/media\/[^"'\s<>]+/i);
   if (direct) {
     const local = ensureLocalAsset(localVendorMediaUrl(direct[0]));
     if (local) return local;
   }
-  const youtubeThumb = html.match(/https?:\/\/i\.ytimg\.com\/[^"'\s<>]+?\.(?:jpg|jpeg|png|webp)/i);
+  const youtubeThumb = source.match(/https?:\/\/i\.ytimg\.com\/[^"'\s<>]+?\.(?:jpg|jpeg|png|webp)/i);
   if (youtubeThumb) return youtubeThumb[0].replace(/[),.;]+$/, "");
   return "";
+}
+
+function thumbnailFromContentAsset(contentHtml) {
+  const match = contentHtml.match(/(344230_[A-Za-z0-9_.~-]+\.(?:jpg|jpeg|png|webp))/i);
+  if (!match) return "";
+  return `https://static.wixstatic.com/media/${match[1]}`;
 }
 
 function parseSpanishDate(value) {
@@ -270,11 +324,13 @@ async function main() {
     const title = titleFromHtml(html, slug);
     const youtubeUrl = youtubeFromHtml(html);
     const excerpt = normalizeExcerpt(excerptFromHtml(html), title, youtubeUrl);
-    const parsedYoutubeId = youtubeVideoId(youtubeUrl);
-    const youtubePoster = parsedYoutubeId
-      ? `https://i.ytimg.com/vi/${parsedYoutubeId}/hqdefault.jpg`
-      : "";
-    const thumbnailUrl = thumbnailFromHtml(html) || youtubePoster;
+    const contentHtml = postBodyHtml(html);
+    const youtubePoster = youtubePosterFromUrl(youtubeUrl);
+    const thumbnailCandidate =
+      THUMBNAIL_OVERRIDES[slug] || thumbnailFromHtml(html) || thumbnailFromContentAsset(contentHtml) || youtubePoster;
+    const thumbnailAssetId = wixAssetIdFromText(thumbnailCandidate) || wixAssetIdFromText(contentHtml);
+    const localThumbnail = localBackupThumbnailUrl(slug, thumbnailAssetId);
+    const thumbnailUrl = localThumbnail || (thumbnailAssetId ? "" : thumbnailCandidate);
 
     posts.push({
       slug,
@@ -283,7 +339,7 @@ async function main() {
       thumbnailUrl,
       excerpt,
       youtubeUrl,
-      contentHtml: postBodyHtml(html)
+      contentHtml
     });
   }
 

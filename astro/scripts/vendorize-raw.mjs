@@ -8,6 +8,7 @@ const VENDOR_DIR = path.join(ROOT, "public", "vendor");
 const SELF_HOSTS = new Set(["www.fenicio.es", "fenicio.es"]);
 const SKIP_HOSTS = new Set(["www.w3.org"]);
 const KEEP_EXTERNAL_HOSTS = new Set([
+  "static.wixstatic.com",
   "www.youtube.com",
   "youtube.com",
   "youtu.be",
@@ -121,12 +122,6 @@ function collectUrlsFromContent(content) {
   return urls;
 }
 
-function stripRuntimeScripts(html) {
-  return html
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
-    .replace(/<script\b[^>]*\/>/gi, "");
-}
-
 function rewriteContent(content, mapping) {
   let rewritten = content;
   for (const [from, to] of mapping.entries()) {
@@ -137,7 +132,7 @@ function rewriteContent(content, mapping) {
 }
 
 function convertAbsoluteUrl(urlLike) {
-  const normalized = toOriginalWixMedia(unescapeSlashes(urlLike));
+  const normalized = unescapeSlashes(urlLike);
   let parsed;
   try {
     parsed = new URL(normalized);
@@ -181,10 +176,7 @@ async function main() {
 
   for (const relative of targetFiles) {
     const absolute = path.join(RAW_DIR, relative);
-    let content = await readFile(absolute, "utf-8");
-    if (relative.toLowerCase().endsWith(".html")) {
-      content = stripRuntimeScripts(content);
-    }
+    const content = await readFile(absolute, "utf-8");
     rawContent.set(relative, content);
     for (const url of collectUrlsFromContent(content)) externalUrls.add(url);
   }
@@ -194,7 +186,7 @@ async function main() {
   let failed = 0;
 
   for (const url of externalUrls) {
-    const normalizedUrl = toOriginalWixMedia(unescapeSlashes(url));
+    const normalizedUrl = unescapeSlashes(url);
     const sameHost = rewriteSameHost(normalizedUrl);
     if (sameHost) {
       rewriteMap.set(url, sameHost);
@@ -245,10 +237,10 @@ async function main() {
       }
     );
 
-    // Cuarta pasada: si ya se reescribio a /vendor/.../media/<file>/v1/... forzamos original local.
-    rewritten = rewritten.replace(
-      /\/vendor\/static\.wixstatic\.com\/media\/([^/"'\s<>]+)\/v1\/[^"'\s<>]*/g,
-      (_full, fileName) => `/vendor/static.wixstatic.com/media/${fileName}`
+    // Cuarta pasada: forzar Wix media a host remoto para mantener thumbnails/v1 transformadas.
+    rewritten = rewritten.replaceAll(
+      "/vendor/static.wixstatic.com/media/",
+      "https://static.wixstatic.com/media/"
     );
 
     // Quinta pasada: enruta blog y posts a las rutas Astro (paginadas).
@@ -264,6 +256,12 @@ async function main() {
       /(href|src)=["'](?:\.\/)?post\/([^"']+)\.html["']/gi,
       (_full, attr, slug) => `${attr}="/post/${slug}/"`
     );
+
+    // El blog original usa scroll infinito y solo hidrata 20 entradas en SSR.
+    // Forzamos una redirección estable al listado paginado Astro (21+ entradas).
+    if (relative === "blog.html") {
+      rewritten = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Redirigiendo al blog completo</title><meta http-equiv="refresh" content="0; url=/blog/todos/"><link rel="canonical" href="/blog/todos/"></head><body><p>Redirigiendo al listado completo: <a href="/blog/todos/">/blog/todos/</a></p></body></html>`;
+    }
 
     await writeFile(absolute, rewritten, "utf-8");
   }

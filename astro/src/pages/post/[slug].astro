@@ -1,4 +1,5 @@
 ---
+import BaseLayout from "../../layouts/BaseLayout.astro";
 import posts from "../../data/posts.json";
 
 export function getStaticPaths() {
@@ -9,5 +10,101 @@ export function getStaticPaths() {
 }
 
 const { slug } = Astro.props;
-return Astro.redirect(`/raw/post/${slug}.html`);
+const post = posts.find((item) => item.slug === slug);
+
+if (!post) {
+  return Astro.redirect("/blog/todos/");
+}
+
+function collectAssetIds(value = "") {
+  return [...value.matchAll(/(344230_[A-Za-z0-9_.~-]+\.(?:jpg|jpeg|png|webp))/gi)].map((m) => m[1]);
+}
+
+const assetIds = [...new Set([...collectAssetIds(post.contentHtml || ""), ...collectAssetIds(post.thumbnailUrl || "")])];
+const imageUrls = assetIds.map((id) => ({
+  local: `/backup/post/${encodeURIComponent(slug)}/maxres/${id}`,
+  remote: `https://static.wixstatic.com/media/${id}`
+}));
+
+function youtubeEmbedUrl(url = "") {
+  if (!url) return "";
+  try {
+    const u = new URL(url);
+    const host = u.hostname.toLowerCase();
+    let videoId = "";
+
+    if (host === "youtu.be") {
+      videoId = u.pathname.replace(/^\/+/, "").split("/")[0] || "";
+    } else if (host.includes("youtube.com")) {
+      if (u.pathname.startsWith("/watch")) {
+        videoId = u.searchParams.get("v") || "";
+      } else if (u.pathname.startsWith("/live/")) {
+        videoId = u.pathname.split("/")[2] || "";
+      } else if (u.pathname.startsWith("/shorts/")) {
+        videoId = u.pathname.split("/")[2] || "";
+      } else if (u.pathname.startsWith("/embed/")) {
+        videoId = u.pathname.split("/")[2] || "";
+      }
+    }
+
+    if (!videoId) return "";
+    return `https://www.youtube.com/embed/${videoId}`;
+  } catch {
+    return "";
+  }
+}
+
+const youtubeEmbed = youtubeEmbedUrl(post.youtubeUrl || "");
 ---
+<BaseLayout title={`${post.title} | Fenicio`}>
+  <article class="card post-detail">
+    <h1>{post.title}</h1>
+    {post.publishedAt && <p class="post-meta">{post.publishedAt}</p>}
+    {youtubeEmbed ? (
+      <section class="post-video" aria-label="Video de YouTube">
+        <iframe
+          src={youtubeEmbed}
+          title={`Video: ${post.title}`}
+          loading="lazy"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+        />
+      </section>
+    ) : (
+      post.youtubeUrl && (
+        <p><a href={post.youtubeUrl} target="_blank" rel="noopener noreferrer">{post.youtubeUrl}</a></p>
+      )
+    )}
+    {post.contentHtml ? (
+      <section class="post-content" set:html={post.contentHtml} />
+    ) : (
+      post.excerpt && <p>{post.excerpt}</p>
+    )}
+
+    {!imageUrls.length && post.thumbnailUrl && (
+      <section class="post-gallery" aria-label="Imagen destacada del artículo">
+        <figure>
+          <img src={post.thumbnailUrl} alt={post.title} loading="lazy" />
+        </figure>
+      </section>
+    )}
+
+    {imageUrls.length > 0 && (
+      <section class="post-gallery" aria-label="Galería del artículo">
+        {imageUrls.map((img, index) => (
+          <figure>
+            <img
+              src={img.local}
+              alt={`${post.title} - foto ${index + 1}`}
+              loading="lazy"
+              onerror={`if(this.dataset.fallback!=='1'){this.dataset.fallback='1';this.src='${img.remote}';}`}
+            />
+          </figure>
+        ))}
+      </section>
+    )}
+
+    <p><a href={`/raw/post/${encodeURIComponent(slug)}.html`}>Ver versión original (raw)</a></p>
+  </article>
+</BaseLayout>

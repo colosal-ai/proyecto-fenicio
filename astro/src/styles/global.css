@@ -149,3 +149,43 @@ a:hover { text-decoration: underline; }
 .pagination-disabled {
   color: #475569;
 }
+
+.post-detail {
+  display: grid;
+  gap: 14px;
+}
+
+.post-gallery {
+  display: grid;
+  gap: 12px;
+}
+
+.post-gallery img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+  background: #e2e8f0;
+}
+
+.post-video {
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+}
+
+.post-video iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  display: block;
+}
+
+.post-content {
+  color: #334155;
+  line-height: 1.7;
+}
+
+.post-content p {
+  margin: 0 0 12px;
+}

@@ -6,6 +6,7 @@
   "scripts": {
     "sync:content": "node scripts/import-from-mirror.mjs",
     "vendorize:raw": "node scripts/vendorize-raw.mjs",
+    "backup:post-images": "node scripts/backup-post-images.mjs --all",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
