@@ -1,0 +1,45 @@
+---
+description: Contexto del proyecto fenicio.es — archivo Wix congelado en Git, sin Wix en vivo
+alwaysApply: true
+---
+
+# fenicio.es — fuente de verdad en Git
+
+## Historia y estado actual
+
+- El sitio **nació en Wix** (Thunderbolt, `static.wixstatic.com`, `static.parastorage.com`).
+- **`fenicio.es` ya no apunta a Wix**: el dominio sirve nuestro servidor (Plesk / `httpdocs`).
+- El sitio Wix en vivo **no es accesible** desde el dominio ni debe usarse como fuente de contenido.
+- El proyecto archivó Wix con scripts de mirror (`npm run sync`, descarga de originales, etc.). **Esa fase terminó.**
+- **La fuente de verdad es este repositorio Git**, no Wix ni la red hacia Wix.
+
+## Qué hay en el repo (no re-descargar)
+
+| Ruta | Rol |
+|------|-----|
+| `www.fenicio.es/` | HTML espejo Wix (páginas, posts) |
+| `static.parastorage.com/`, `static.wixstatic.com/` | Assets del mirror (CSS/JS/variantes de imagen) |
+| `originals/static.wixstatic.com/media/` | JPG/PNG originales (blog, fondos) |
+| `src/content/pages/` | HTML adaptado para import Astro |
+| `astro/` | Build estático, blog migrado, deploy |
+
+Tras `git clone`, el flujo normal es **`cd astro && npm run prepare`** (solo disco local). No hace falta `npm run sync`.
+
+## Producción vs desarrollo
+
+- **Producción**: contenido de `astro/dist/` en `httpdocs` (`npm run deploy:server`).
+- **Páginas Wix archivadas**: `/raw/*.html` (p. ej. `/equipo.html` vía `.htaccess`).
+- **Blog Astro**: `/blog/`, `/post/<slug>/` (no depender del scroll infinito de Wix).
+- **Generación en build**: salida en `astro/.generated/` → `dist/` (no versionar `astro/public/raw/`).
+
+## No hacer salvo excepción explícita
+
+- No asumir que Wix responde ni volver a crawlear por defecto.
+- No usar scripts deprecados: `npm run sync`, `download-wix-originals.sh`, `vendorize:raw`, `backup:post-images` (ver `README.md`).
+- No commitear artefactos de `prepare` (`astro/.generated/`, `astro/dist/`, `astro/public/raw/`).
+
+Emergencia con red a Wix (solo si el usuario lo pide): `ALLOW_WIX_SYNC=1` / `ALLOW_WIX_DOWNLOAD=1`.
+
+## Imágenes Wix en HTML
+
+Las URLs del mirror suelen llevar `/v1/fill/` (miniaturas, blur). En build, `astro/scripts/link-assets-local.mjs` fija `src` y rutas `static.wixstatic.com` al **original** en `originals/…` o a la variante local de mayor `w_` (sin `blur`). No depender del runtime Thunderbolt en producción.

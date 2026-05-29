@@ -2,7 +2,7 @@
  * Reescribe .generated/raw desde assets del repo (sin red).
  * Sustituye a vendorize-raw.mjs (deprecado).
  */
-import { existsSync, statSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -44,30 +44,95 @@ function rewriteSameHost(urlString) {
 }
 
 function wixAssetIdFromPath(pathname) {
-  const m = pathname.match(/(344230_[A-Za-z0-9_.~-]+\.(?:jpg|jpeg|png|webp))/i);
+  const m = pathname.match(WIX_ASSET_ID);
   return m ? m[1] : "";
+}
+
+const ORIGINALS_PUBLIC_PREFIX = "/originals/static.wixstatic.com/media";
+const WIX_ASSET_ID = /(344230_[A-Za-z0-9_.~-]+\.(?:jpg|jpeg|png|webp|avif))/i;
+const WIX_MEDIA_URL =
+  /(?:https?:\/\/static\.wixstatic\.com\/media\/|\/static\.wixstatic\.com\/media\/)(344230_[A-Za-z0-9_.~-]+\.(?:jpg|jpeg|png|webp|avif))(?:\/[^"'\\)\s<>]*)?/gi;
+
+function originalPublicUrl(assetId) {
+  if (!assetId || !existsSync(path.join(ORIGINALS_DIR, assetId))) return "";
+  return `${ORIGINALS_PUBLIC_PREFIX}/${assetId}`;
+}
+
+function walkMirrorImageFiles(dir, files = []) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      walkMirrorImageFiles(full, files);
+      continue;
+    }
+    if (/\.(jpe?g|png|webp|avif)$/i.test(entry.name)) files.push(full);
+  }
+  return files;
+}
+
+/** Mayor w_ en la ruta; penaliza blur; desempata por tamaño en disco. */
+function scoreMirrorVariant(filePath) {
+  const rel = filePath.replace(/\\/g, "/");
+  let score = 0;
+  if (/blur/i.test(rel)) score -= 1_000_000;
+  const widthMatch = rel.match(/\/w_(\d+)/i);
+  if (widthMatch) score += Number.parseInt(widthMatch[1], 10) * 1000;
+  try {
+    score += Math.floor(statSync(filePath).size / 100);
+  } catch {
+    // ignore
+  }
+  return score;
+}
+
+function largestMirrorVariantPublicUrl(assetId) {
+  const mediaDir = path.join(REPO_ROOT, "static.wixstatic.com/media", assetId);
+  if (!existsSync(mediaDir)) return "";
+  let st;
+  try {
+    st = statSync(mediaDir);
+  } catch {
+    return "";
+  }
+  if (st.isFile()) return `${WIXSTATIC_PUBLIC}/media/${assetId}`;
+  if (!st.isDirectory()) return "";
+
+  const files = walkMirrorImageFiles(mediaDir);
+  if (!files.length) return "";
+
+  const best = files.sort((a, b) => scoreMirrorVariant(b) - scoreMirrorVariant(a))[0];
+  const rel = path
+    .relative(path.join(REPO_ROOT, "static.wixstatic.com"), best)
+    .replace(/\\/g, "/");
+  return `${WIXSTATIC_PUBLIC}/${rel}`;
+}
+
+/** URL local de máxima calidad para un asset Wix (original > archivo plano > mejor /v1/fill/). */
+function bestLocalUrlForAssetId(assetId) {
+  if (!assetId) return "";
+  const fromOriginal = originalPublicUrl(assetId);
+  if (fromOriginal) return fromOriginal;
+  return largestMirrorVariantPublicUrl(assetId);
 }
 
 function findMirrorWixPath(assetId, pathname) {
   if (!assetId) return "";
-  const original = path.join(ORIGINALS_DIR, assetId);
-  if (existsSync(original)) {
-    return `/originals/static.wixstatic.com/media/${assetId}`;
-  }
+  const best = bestLocalUrlForAssetId(assetId);
+  if (best) return best;
+
   const relFromUrl = pathname.replace(/^\/+/, "");
+  if (/\/v1\/fill\//i.test(relFromUrl)) return "";
+
   const exact = path.join(REPO_ROOT, "static.wixstatic.com", relFromUrl);
-  if (existsSync(exact)) {
-    return `${WIXSTATIC_PUBLIC}/${relFromUrl}`;
-  }
-  const mediaDir = path.join(REPO_ROOT, "static.wixstatic.com/media", assetId);
-  if (!existsSync(mediaDir)) return "";
-  try {
-    const st = statSync(mediaDir);
-    if (st.isFile()) return `${WIXSTATIC_PUBLIC}/media/${assetId}`;
-  } catch {
-    return "";
-  }
-  return `${WIXSTATIC_PUBLIC}/media/${assetId}`;
+  if (existsSync(exact)) return `${WIXSTATIC_PUBLIC}/${relFromUrl}`;
+  return "";
+}
+
+function upgradeWixMediaUrls(content) {
+  return content.replace(WIX_MEDIA_URL, (match, assetId) => {
+    const best = bestLocalUrlForAssetId(assetId);
+    return best || match;
+  });
 }
 
 function localUrlForAbsolute(urlString) {
@@ -142,6 +207,7 @@ async function main() {
     const absolute = path.join(RAW_DIR, relative);
     let content = await readFile(absolute, "utf-8");
     content = normalizeRelativeMirrorPaths(content);
+    content = upgradeWixMediaUrls(content);
 
     content = content.replace(
       /(https?:\\\/\\\/[^\s"'<>]+|https?:\/\/[^\s"'<>]+)/g,
@@ -175,7 +241,7 @@ async function main() {
   }
 
   console.log(
-    `Enlaces locales en .generated/raw (${rewrittenFiles} archivos). Rutas: ${PARASTORAGE_PUBLIC}, ${WIXSTATIC_PUBLIC}, /originals/…`
+    `Enlaces locales en .generated/raw (${rewrittenFiles} archivos). Imágenes Wix → ${ORIGINALS_PUBLIC_PREFIX}/ o mejor variante en ${WIXSTATIC_PUBLIC}/`
   );
 }
 

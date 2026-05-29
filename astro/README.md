@@ -16,7 +16,7 @@ npm run dev        # http://127.0.0.1:4321/
 | Paso | Script | Acción |
 |------|--------|--------|
 | 1 | `sync:content` | `posts.json` + mirror en **`.generated/`** |
-| 2 | `link:assets` | Reescribe HTML en `.generated/raw/` |
+| 2 | `link:assets` | Reescribe HTML en `.generated/raw/` (fondos e imágenes Wix → `originals/` o mejor variante local, sin JS Wix) |
 | 3 | `build` | Rutas Astro → `dist/` |
 | 4 | `publish:generated` | `.generated/` → `dist/` (producción) |
 
