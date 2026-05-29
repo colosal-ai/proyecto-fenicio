@@ -7,6 +7,7 @@ import path from "node:path";
 const ROOT = process.cwd();
 const GENERATED = path.join(ROOT, ".generated");
 const STAGES = ["raw", "static.parastorage.com", "static.wixstatic.com", "originals"];
+const ROOT_HTML_PAGES = ["index.html", "equipo.html", "embarcación.html", "contacto.html"];
 
 async function main() {
   try {
@@ -23,7 +24,18 @@ async function main() {
     await mkdir(path.dirname(dest), { recursive: true });
     await cp(src, dest, { recursive: true, force: true });
   }
-  console.log("Staging .generated/ → public/ (solo dev local).");
+
+  for (const name of ROOT_HTML_PAGES) {
+    const src = path.join(GENERATED, "raw", name);
+    try {
+      await access(src);
+      await cp(src, path.join(ROOT, "public", name), { force: true });
+    } catch {
+      // opcional
+    }
+  }
+
+  console.log("Staging .generated/ → public/ (+ páginas Wix en raíz de public/).");
 }
 
 main().catch((error) => {

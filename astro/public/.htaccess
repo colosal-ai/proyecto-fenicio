@@ -1,7 +1,6 @@
 RewriteEngine On
 
-# Raíz → home archivada Wix
-RewriteRule ^$ /raw/index.html [L]
+# / sirve dist/index.html (copia de prepare en raíz; no rewrite interno a /raw/)
 
 # Alias antiguo /blog/todos/ → /blog/ (una sola redirección 301)
 RewriteRule ^blog/todos/?$ /blog/ [R=301,L]

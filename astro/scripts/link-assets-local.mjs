@@ -37,10 +37,53 @@ function rewriteSameHost(urlString) {
       const clean = u.pathname.replace(/\/+$/, "");
       return `${clean}/${u.search}${u.hash}`.replace("/?", "?").replace("/#", "#");
     }
+    if (/^\/[^/]+\.html$/i.test(u.pathname)) {
+      return `${u.pathname}${u.search}${u.hash}`;
+    }
     return `/raw${u.pathname}${u.search}${u.hash}`;
   } catch {
     return null;
   }
+}
+
+/** URL pública (barra del navegador) para un HTML del mirror en raw/. */
+function publicUrlForRawHtml(relativePath) {
+  const normalized = relativePath.replace(/\\/g, "/");
+  if (normalized === "index.html") return "/";
+  return `/${normalized}`;
+}
+
+/** Alinea JSON Wix con rutas públicas (/equipo.html) en lugar de /raw/… */
+function normalizeWixPublicBaseUrls(content, relativePath) {
+  const publicUrl = publicUrlForRawHtml(relativePath);
+  const requestPath = publicUrl === "/" ? "/" : publicUrl.replace(/\.html$/i, "");
+
+  let out = content;
+  out = out.replaceAll('"externalBaseUrl":"/raw/"', '"externalBaseUrl":"/"');
+  out = out.replaceAll('"externalBaseUrl":"\\/raw\\/"', '"externalBaseUrl":"\\/"');
+  out = out.replaceAll('"/raw/_api/', '"/_api/');
+  out = out.replaceAll('"\\/raw\\/_api', '"\\/_api');
+  out = out.replaceAll('"/raw/"', '"/"');
+  out = out.replace(/"requestUrl":"\/raw[^"]*"/g, `"requestUrl":"${requestPath}"`);
+  return out;
+}
+
+const ARCHIVE_LAYOUT_FIX = `<style id="fenicio-archive-layout">
+/* Sin Thunderbolt: menú horizontal y centrado en cabecera (igual que con JS en /raw/) */
+#comp-ju1005uj.hidden-during-prewarmup{visibility:visible!important}
+#comp-ju1005uj,#comp-ju1005uj .pols_4,#comp-ju1005uj nav{height:50px}
+#comp-ju1005uj .wTjmlM{display:flex;flex-direction:row;align-items:center;justify-content:center;height:100%;text-align:center}
+#comp-ju1005uj .agzDLy{display:inline-flex;align-items:center;height:100%;--display:inline-flex}
+#comp-ju1005uj .wNTNML,#comp-ju1005uj .MKZTGU{display:flex;align-items:center;height:100%}
+#SITE_HEADER [data-mesh-id="SITE_HEADERinlineContent-gridContainer"]{align-items:center}
+</style>`;
+
+function injectArchiveLayoutFix(content) {
+  if (content.includes('id="fenicio-archive-layout"')) return content;
+  if (/<\/head>/i.test(content)) {
+    return content.replace(/<\/head>/i, `${ARCHIVE_LAYOUT_FIX}</head>`);
+  }
+  return `${ARCHIVE_LAYOUT_FIX}${content}`;
 }
 
 function wixAssetIdFromPath(pathname) {
@@ -218,6 +261,8 @@ async function main() {
     );
 
     if (relative.endsWith(".html")) {
+      content = normalizeWixPublicBaseUrls(content, relative);
+      content = injectArchiveLayoutFix(content);
       content = stripScripts(content);
       content = content.replace(
         /(href|src)=["'](?:\.\/)?blog\.html["']/gi,

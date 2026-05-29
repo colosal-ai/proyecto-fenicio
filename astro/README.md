@@ -186,11 +186,12 @@ curl -sI -H 'Host: fenicio.es' http://127.0.0.1/blog/ | head -5
 
 O: `npm run healthcheck:local` dentro de `astro/`.
 
-### Inicio `/` → `/raw/index.html`
+### Inicio `/` y menú de cabecera
 
-- `public/index.html` hace un salto directo (meta refresh) a la home archivada.
-- En Apache, `.htaccess` reescribe `/` → `/raw/index.html` sin pasar por Astro.
-- **No** uses `redirects` en `astro.config.mjs`: en `astro dev` Astro muestra una pantalla *“Redirecting from / to …”* que parece un bloqueo del navegador, pero es solo el modo desarrollo.
+- Tras `prepare`, `publish:generated` copia `index.html`, `equipo.html`, etc. en la **raíz de `dist/`** (mismo HTML que `/raw/`, URL pública `/` o `/equipo.html`).
+- `link:assets` ajusta `externalBaseUrl` a `/` y añade CSS de respaldo para el menú sin JS Wix.
+- En dev: `npm run dev` ejecuta `stage:public` y deja esas páginas también en `public/` (sustituye el stub `public/index.html` del repo).
+- **No** uses `redirects` en `astro.config.mjs` para `/`.
 
 ---
 
@@ -203,7 +204,7 @@ O: `npm run healthcheck:local` dentro de `astro/`.
 
 | Ruta | Descripción |
 |------|-------------|
-| `/` | Redirige a home archivada (`/raw/index.html`) |
-| `/raw/*` | Páginas Wix archivadas |
+| `/`, `/equipo.html`, … | Páginas Wix archivadas (copia en raíz de `dist/`) |
+| `/raw/*` | Misma copia (URL alternativa / legacy) |
 | `/blog/` | Listado completo de entradas (`/blog/todos/` redirige aquí con 301) |
 | `/post/<slug>/` | Entrada migrada |

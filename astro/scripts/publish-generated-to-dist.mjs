@@ -1,9 +1,13 @@
-import { cp, mkdir } from "node:fs/promises";
+import { access, cp, mkdir } from "node:fs/promises";
 import path from "node:path";
 
 const ROOT = process.cwd();
 const GENERATED = path.join(ROOT, ".generated");
 const DIST = path.join(ROOT, "dist");
+const RAW_GENERATED = path.join(GENERATED, "raw");
+
+/** Páginas Wix servidas también en la raíz (/index.html → /, /equipo.html, …). */
+const ROOT_HTML_PAGES = ["index.html", "equipo.html", "embarcación.html", "contacto.html"];
 
 const STAGES = [
   { from: "raw", to: "raw" },
@@ -19,7 +23,21 @@ async function main() {
     const dest = path.join(DIST, to);
     await cp(src, dest, { recursive: true, force: true });
   }
-  console.log("Publicado en dist/: raw/, static.*, originals/ (desde .generated/).");
+
+  for (const name of ROOT_HTML_PAGES) {
+    const src = path.join(RAW_GENERATED, name);
+    try {
+      await access(src);
+      await cp(src, path.join(DIST, name), { force: true });
+    } catch {
+      // página opcional en el mirror
+    }
+  }
+
+  console.log(
+    "Publicado en dist/: raw/, static.*, originals/ y copia raíz de " +
+      ROOT_HTML_PAGES.join(", ")
+  );
 }
 
 main().catch((error) => {
