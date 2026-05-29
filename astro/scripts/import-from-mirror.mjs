@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -7,6 +7,13 @@ const CONTENT_ROOT = path.resolve(ROOT, "../src/content/pages/post");
 const RAW_SOURCE_ROOT = path.resolve(ROOT, "../www.fenicio.es");
 const OUTPUT_FILE = path.resolve(ROOT, "src/data/posts.json");
 const RAW_PUBLIC_DIR = path.resolve(ROOT, "public/raw");
+const REPO_ROOT = path.resolve(ROOT, "..");
+const ORIGINALS_SOURCE_DIR = path.resolve(REPO_ROOT, "originals/static.wixstatic.com/media");
+const ORIGINALS_PUBLIC_DIR = path.resolve(ROOT, "public/originals/static.wixstatic.com/media");
+const MIRROR_PARASTORAGE_SRC = path.resolve(REPO_ROOT, "static.parastorage.com");
+const MIRROR_WIXSTATIC_SRC = path.resolve(REPO_ROOT, "static.wixstatic.com");
+const MIRROR_PARASTORAGE_PUBLIC = path.resolve(ROOT, "public/static.parastorage.com");
+const MIRROR_WIXSTATIC_PUBLIC = path.resolve(ROOT, "public/static.wixstatic.com");
 const THUMBNAIL_OVERRIDES = {
   "tabarca-vela-en-directo-3-jornada":
     "344230_b90647a1dcb3472aaa7f62be57d52e3a~mv2.jpg"
@@ -28,27 +35,37 @@ async function listHtmlFiles(dir) {
   return files;
 }
 
-function localVendorMediaUrl(urlOrUri) {
+function localMirrorWixMediaUrl(assetId) {
+  if (!assetId) return "";
+  const originalAbs = path.join(ORIGINALS_PUBLIC_DIR, assetId);
+  if (existsSync(originalAbs)) {
+    return `/originals/static.wixstatic.com/media/${assetId}`;
+  }
+  const mirrorFile = path.join(MIRROR_WIXSTATIC_SRC, "media", assetId);
+  if (existsSync(mirrorFile)) {
+    return `/static.wixstatic.com/media/${assetId}`;
+  }
+  const mirrorDir = mirrorFile;
+  if (existsSync(mirrorDir) && statSync(mirrorDir).isDirectory()) {
+    return `/static.wixstatic.com/media/${assetId}`;
+  }
+  return "";
+}
+
+function localMediaUrlFromCandidate(urlOrUri) {
   if (!urlOrUri) return "";
   const value = decodeEntities(urlOrUri.trim());
   if (!value) return "";
 
-  // Wix uri relative (ej: 344230_xxx.jpg)
-  if (!value.startsWith("http://") && !value.startsWith("https://")) {
-    return `/vendor/static.wixstatic.com/media/${value}`;
+  const assetId = wixAssetIdFromText(value);
+  if (assetId) {
+    const local = localMirrorWixMediaUrl(assetId);
+    if (local) return local;
   }
 
-  let u;
-  try {
-    u = new URL(value);
-  } catch {
-    return value;
-  }
-  if (u.hostname !== "static.wixstatic.com") return value;
+  if (/^https?:\/\/i\.ytimg\.com\//i.test(value)) return value;
 
-  const m = u.pathname.match(/^\/media\/([^/]+)/);
-  if (!m) return value;
-  return `/vendor/static.wixstatic.com/media/${m[1]}`;
+  return "";
 }
 
 function ensureLocalAsset(url) {
@@ -81,9 +98,9 @@ function localizeRichHtmlUrls(html) {
       return raw;
     }
 
-    // Convertir media de Wix a vendor local.
     if (/https?:\/\/static\.wixstatic\.com\/media\//i.test(raw)) {
-      return localVendorMediaUrl(raw);
+      const local = localMediaUrlFromCandidate(raw);
+      if (local) return local;
     }
 
     return raw;
@@ -148,6 +165,38 @@ function localBackupThumbnailUrl(slug, assetId) {
   const rel = `/backup/post/${encodeURIComponent(slug)}/maxres/${assetId}`;
   const abs = path.resolve(ROOT, "public", rel.replace(/^\//, ""));
   return existsSync(abs) ? rel : "";
+}
+
+function localOriginalMediaUrl(assetId) {
+  if (!assetId) return "";
+  const rel = `/originals/static.wixstatic.com/media/${assetId}`;
+  const abs = path.join(ORIGINALS_PUBLIC_DIR, assetId);
+  return existsSync(abs) ? rel : "";
+}
+
+function resolveThumbnailUrl(slug, thumbnailCandidate, contentHtml) {
+  const assetId =
+    wixAssetIdFromText(thumbnailCandidate) ||
+    wixAssetIdFromText(contentHtml) ||
+    "";
+
+  const localBackup = localBackupThumbnailUrl(slug, assetId);
+  if (localBackup) return localBackup;
+
+  if (assetId) {
+    const original = localOriginalMediaUrl(assetId);
+    if (original) return original;
+    const mirror = localMirrorWixMediaUrl(assetId);
+    if (mirror) return mirror;
+  }
+
+  if (thumbnailCandidate) {
+    if (/^https?:\/\/i\.ytimg\.com\//i.test(thumbnailCandidate)) return thumbnailCandidate;
+    const fromCandidate = localMediaUrlFromCandidate(thumbnailCandidate);
+    if (fromCandidate) return fromCandidate;
+  }
+
+  return "";
 }
 
 function postBodyHtml(html) {
@@ -248,24 +297,26 @@ function publishedFromHtml(html) {
 function thumbnailFromHtml(html) {
   const source = postDescriptionHtml(html) || html;
   const imageInfo = source.match(/"imageData":\{"width":\d+,"height":\d+,"uri":"([^"]+)"/i);
-  if (imageInfo) {
-    const local = ensureLocalAsset(localVendorMediaUrl(imageInfo[1]));
-    if (local) return local;
-  }
+  if (imageInfo?.[1]) return imageInfo[1];
   const direct = source.match(/https?:\/\/static\.wixstatic\.com\/media\/[^"'\s<>]+/i);
-  if (direct) {
-    const local = ensureLocalAsset(localVendorMediaUrl(direct[0]));
-    if (local) return local;
-  }
+  if (direct) return direct[0];
   const youtubeThumb = source.match(/https?:\/\/i\.ytimg\.com\/[^"'\s<>]+?\.(?:jpg|jpeg|png|webp)/i);
   if (youtubeThumb) return youtubeThumb[0].replace(/[),.;]+$/, "");
   return "";
 }
 
+function thumbnailFromOgImage(html) {
+  if (!html) return "";
+  const match =
+    html.match(/property=["']og:image["'][^>]*content=["']([^"']+)["']/i) ||
+    html.match(/content=["']([^"']+)["'][^>]*property=["']og:image["']/i);
+  if (!match?.[1]) return "";
+  return match[1];
+}
+
 function thumbnailFromContentAsset(contentHtml) {
   const match = contentHtml.match(/(344230_[A-Za-z0-9_.~-]+\.(?:jpg|jpeg|png|webp))/i);
-  if (!match) return "";
-  return `https://static.wixstatic.com/media/${match[1]}`;
+  return match ? match[1] : "";
 }
 
 function parseSpanishDate(value) {
@@ -313,6 +364,21 @@ async function main() {
   await mkdir(path.dirname(RAW_PUBLIC_DIR), { recursive: true });
   await cp(RAW_SOURCE_ROOT, RAW_PUBLIC_DIR, { recursive: true });
 
+  await rm(path.dirname(ORIGINALS_PUBLIC_DIR), { recursive: true, force: true });
+  if (existsSync(ORIGINALS_SOURCE_DIR)) {
+    await mkdir(path.dirname(ORIGINALS_PUBLIC_DIR), { recursive: true });
+    await cp(ORIGINALS_SOURCE_DIR, ORIGINALS_PUBLIC_DIR, { recursive: true });
+  }
+
+  if (existsSync(MIRROR_PARASTORAGE_SRC)) {
+    await rm(MIRROR_PARASTORAGE_PUBLIC, { recursive: true, force: true });
+    await cp(MIRROR_PARASTORAGE_SRC, MIRROR_PARASTORAGE_PUBLIC, { recursive: true });
+  }
+  if (existsSync(MIRROR_WIXSTATIC_SRC)) {
+    await rm(MIRROR_WIXSTATIC_PUBLIC, { recursive: true, force: true });
+    await cp(MIRROR_WIXSTATIC_SRC, MIRROR_WIXSTATIC_PUBLIC, { recursive: true });
+  }
+
   const files = await listHtmlFiles(CONTENT_ROOT);
   const blogHtml = await readFile(path.join(RAW_SOURCE_ROOT, "blog.html"), "utf-8").catch(() => "");
   const posts = [];
@@ -321,21 +387,26 @@ async function main() {
     const relative = path.relative(CONTENT_ROOT, file).replace(/\\/g, "/");
     const slug = relative.replace(/\.html$/i, "");
     const html = await readFile(file, "utf-8");
+    const mirrorHtml = await readFile(path.join(RAW_SOURCE_ROOT, "post", `${slug}.html`), "utf-8").catch(
+      () => ""
+    );
     const title = titleFromHtml(html, slug);
-    const youtubeUrl = youtubeFromHtml(html);
+    const youtubeUrl = youtubeFromHtml(html) || youtubeFromHtml(mirrorHtml);
     const excerpt = normalizeExcerpt(excerptFromHtml(html), title, youtubeUrl);
     const contentHtml = postBodyHtml(html);
     const youtubePoster = youtubePosterFromUrl(youtubeUrl);
     const thumbnailCandidate =
-      THUMBNAIL_OVERRIDES[slug] || thumbnailFromHtml(html) || thumbnailFromContentAsset(contentHtml) || youtubePoster;
-    const thumbnailAssetId = wixAssetIdFromText(thumbnailCandidate) || wixAssetIdFromText(contentHtml);
-    const localThumbnail = localBackupThumbnailUrl(slug, thumbnailAssetId);
-    const thumbnailUrl = localThumbnail || (thumbnailAssetId ? "" : thumbnailCandidate);
+      THUMBNAIL_OVERRIDES[slug] ||
+      thumbnailFromOgImage(mirrorHtml) ||
+      thumbnailFromHtml(html) ||
+      thumbnailFromContentAsset(contentHtml) ||
+      youtubePoster;
+    const thumbnailUrl = resolveThumbnailUrl(slug, thumbnailCandidate, contentHtml);
 
     posts.push({
       slug,
       title,
-      publishedAt: publishedFromHtml(html),
+      publishedAt: publishedFromHtml(html) || publishedFromHtml(mirrorHtml),
       thumbnailUrl,
       excerpt,
       youtubeUrl,
@@ -354,7 +425,10 @@ async function main() {
       b.publishedTs - a.publishedTs || a.sortIndex - b.sortIndex || a.slug.localeCompare(b.slug, "es")
   );
   await writeFile(OUTPUT_FILE, JSON.stringify(posts, null, 2), "utf-8");
-  console.log(`Posts importados a Astro: ${posts.length}. Mirror raw copiado a public/raw.`);
+  const withThumb = posts.filter((post) => post.thumbnailUrl).length;
+  console.log(
+    `Posts importados a Astro: ${posts.length}. Thumbnails: ${withThumb}/${posts.length}. Mirror raw copiado a public/raw.`
+  );
 }
 
 main().catch((error) => {

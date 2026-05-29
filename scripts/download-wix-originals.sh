@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
-# Descarga imágenes Wix en URL original (sin /v1/fill/...) a partir de HTML espejado.
+# DEPRECADO: el archivo ya está en originals/ (Git). No vuelve a descargar de Wix.
 set -euo pipefail
+
+if [[ "${ALLOW_WIX_DOWNLOAD:-}" != "1" ]]; then
+  echo "DEPRECADO: download-wix-originals.sh (requiere red a Wix)." >&2
+  echo "Usa el contenido en originals/static.wixstatic.com/media/ y: cd astro && npm run prepare" >&2
+  echo "Solo emergencia: ALLOW_WIX_DOWNLOAD=1 bash scripts/download-wix-originals.sh" >&2
+  exit 1
+fi
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"

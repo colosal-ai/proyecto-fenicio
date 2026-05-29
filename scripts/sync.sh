@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
-# Mirror completo (HTML + static.parastorage + static.wixstatic) → www.fenicio.es/ en la raíz del repo.
+# DEPRECADO: el dominio ya no apunta a Wix; el mirror vive en Git.
 set -euo pipefail
+
+if [[ "${ALLOW_WIX_SYNC:-}" != "1" ]]; then
+  echo "DEPRECADO: sync.sh (re-crawl Wix por red)." >&2
+  echo "Tras git clone: cd astro && npm install && npm run prepare" >&2
+  echo "Solo emergencia: ALLOW_WIX_SYNC=1 npm run sync" >&2
+  exit 1
+fi
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"

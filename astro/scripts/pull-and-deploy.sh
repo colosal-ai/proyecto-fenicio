@@ -47,8 +47,7 @@ git checkout "$BRANCH"
 
 # Limpia artefactos generados que suelen mutar en servidor y bloquear git pull.
 echo "==> Limpieza previa de artefactos generados"
-git restore --worktree --staged astro/public/vendor || true
-git clean -fd astro/public/vendor || true
+# public/vendor/ es legado (vendorize deprecado); link:assets usa static.* del repo.
 
 git pull --ff-only origin "$BRANCH"
 

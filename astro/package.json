@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "sync:content": "node scripts/import-from-mirror.mjs",
+    "link:assets": "node scripts/link-assets-local.mjs",
     "vendorize:raw": "node scripts/vendorize-raw.mjs",
-    "backup:post-images": "node scripts/backup-post-images.mjs --all",
+    "backup:post-images": "node scripts/backup-post-images.mjs",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
@@ -16,7 +17,7 @@
     "deploy:plesk": "bash scripts/deploy-plesk.sh",
     "deploy:remote": "bash scripts/deploy-remote-ssh.sh",
     "deploy:full": "bash scripts/pull-and-deploy.sh",
-    "prepare": "npm run sync:content && npm run vendorize:raw && npm run build"
+    "prepare": "npm run sync:content && npm run link:assets && npm run build"
   },
   "dependencies": {
     "astro": "^5.8.0"
