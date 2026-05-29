@@ -109,14 +109,15 @@ cd /var/www/vhosts/fenicio.es/app/astro
 
 `deploy:server` ejecuta **`clean:generated`** antes del `git pull` (borra `.generated/` y restos en `public/raw/`).
 
-Si un pull antiguo falló con *“Please commit your changes…”*:
+Si `git pull` falla con *“Please commit your changes…”* en `astro/public/raw/`:
 
 ```bash
-cd /var/www/vhosts/fenicio.es/app/astro
-npm run clean:generated
-cd .. && git pull --ff-only origin main
-cd astro && npm run deploy:server
+cd /var/www/vhosts/fenicio.es/app
+bash scripts/server-fix-pull.sh
+cd astro && /opt/plesk/node/24/bin/npm run deploy:server
 ```
+
+(`server-fix-pull` limpia disco y hace `git reset --hard origin/main`.)
 
 **Desde tu máquina** (un solo comando vía SSH; no entras al servidor):
 

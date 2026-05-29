@@ -45,10 +45,11 @@ cd "$REPO_DIR"
 git fetch origin
 git checkout "$BRANCH"
 
-echo "==> Limpieza previa de artefactos generados (evita conflictos en git pull)"
+echo "==> Limpieza previa de artefactos generados"
 bash "$ROOT_DIR/scripts/clean-generated-public.sh"
 
-git pull --ff-only origin "$BRANCH"
+echo "==> Alineando con origin/${BRANCH} (sin merge; ignora cambios locales en HTML generado)"
+git reset --hard "origin/${BRANCH}"
 
 echo "==> [2/5] Instalando dependencias"
 cd "$ROOT_DIR"

@@ -34,7 +34,7 @@ bash "$ROOT_DIR/scripts/clean-generated-public.sh"
 cd "$REPO_DIR"
 git fetch origin
 git checkout "$BRANCH"
-git pull --ff-only origin "$BRANCH"
+git reset --hard "origin/${BRANCH}"
 
 echo "==> [2/3] Instalando dependencias"
 cd "$ROOT_DIR"
