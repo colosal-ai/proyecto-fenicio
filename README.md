@@ -1,117 +1,73 @@
-# fenicio.es — réplica local y migración
+# fenicio.es — archivo Git y sitio Astro
 
-Proyecto para conservar **fenicio.es** (sitio Wix) en Git, espejarlo en local y servir una versión **estática desacoplada** con Astro en Plesk.
+Réplica **congelada** del sitio Wix y generación estática con Astro. El dominio en producción **no** usa Wix; todo el contenido debe estar en este repositorio.
 
-## Sitio congelado (frozen)
+## Inicio rápido (local)
 
-El contenido Wix **ya está archivado en el repo**. No hace falta volver a descargarlo salvo que quieras un re-crawl explícito desde el sitio en vivo.
+```bash
+git clone <URL-del-repo>
+cd astro
+npm install
+npm run prepare
+npm run dev     # http://127.0.0.1:4321/
+```
 
-**Fuente de verdad en Git:**
+`npm run prepare` solo lee archivos del disco (sin descargar de Wix).
+
+## Contenido que debe estar en Git
 
 ```txt
-www.fenicio.es/              # HTML del sitio (28 páginas)
-static.parastorage.com/      # JS/CSS Wix (menú, Thunderbolt)
-static.wixstatic.com/        # imágenes versionadas que enlaza el HTML
-originals/static.wixstatic.com/media/   # fotos originales (sin /v1/fill/)
-src/content/pages/           # HTML adaptado (sin runtime Wix), para Astro/adapt
+www.fenicio.es/                         # HTML mirror
+static.parastorage.com/                 # JS/CSS Wix
+static.wixstatic.com/                   # variantes de imágenes
+originals/static.wixstatic.com/media/   # fotos originales (portadas del blog)
+src/content/pages/                      # posts adaptados para Astro
+astro/                                  # build y despliegue
 ```
 
-**No ejecutar** `npm run sync` en el día a día. Ese comando es el **único** que vuelve a bajar el sitio desde Wix.
+Sin `originals/` y `static.*`, el blog y `/raw/` pueden quedar sin imágenes.
 
-### Qué toca red y qué no
+## Despliegue en servidor
 
-| Comando (raíz) | ¿Descarga Wix? | Qué hace |
-|----------------|----------------|----------|
-| `npm run sync` | **Sí** | Re-crawl completo (solo mantenimiento excepcional) |
-| `npm run adapt` | No | `www.fenicio.es/` → `src/content/pages/` |
-| `npm run build` | No | mirror → `dist/` |
-| `npm run prepare` | No | `adapt` + `build` |
-| `npm run dev` | No | Sirve `dist/` + CDN local en `http://127.0.0.1:8080` |
+Guía completa: **[astro/README.md](astro/README.md)** (sección *Despliegue en servidor*).
 
-| Comando (`astro/`) | ¿Re-crawl Wix? | Qué hace |
-|--------------------|----------------|----------|
-| `npm run dev` | No | Servidor de desarrollo Astro |
-| `npm run prepare` | No | Importa posts, copia raw, vendorize, build (lee archivos locales) |
-| `npm run build` | No | Build estático → `astro/dist/` |
-
-`npm run dev` **nunca** sustituye a `sync`: solo lee lo que ya está en disco.
-
-### Flujo habitual (sitio frozen)
+**Resumen** — tras `git push`:
 
 ```bash
-# Ver clon Wix local (mirror + menú con assets locales)
-npm run prepare   # solo si regeneras dist/ o src/content tras cambios manuales
-npm run dev
-
-# Astro (producción / desarrollo)
-cd astro && npm run prepare && npm run dev
+# En el servidor (dentro del clone)
+cd /var/www/vhosts/fenicio.es/app/astro
+/opt/plesk/node/24/bin/npm run deploy:server
 ```
 
-Tras `git clone`: no hace falta `sync`; el mirror y las originales vienen en el commit.
-
-## Visión general
-
-```txt
-fenicio.es/
-├── README.md
-├── package.json           # adapt / build / dev (sync solo mantenimiento)
-├── scripts/
-│   ├── sync.sh            # re-crawl Wix → raíz (excepcional)
-│   ├── adapt.mjs          # extrae body sin runtime Wix → src/content/pages/
-│   ├── download-wix-originals.sh   # originales desde HTML local (sin sync)
-│   ├── build.mjs
-│   └── dev-server.mjs     # sirve dist/ + static.* + originals/
-├── www.fenicio.es/
-├── static.parastorage.com/
-├── static.wixstatic.com/
-├── originals/
-├── src/content/pages/     # generado por adapt; commiteado para Astro
-└── astro/                 # migración Astro, deploy Plesk
-```
-
-| Línea | Carpetas | Objetivo |
-|-------|----------|----------|
-| Mirror + adaptador | `www.fenicio.es/`, `static.*`, `src/`, `dist/` | Réplica navegable y contenido extraído |
-| Migración Astro | `astro/` | Sitio estático en producción |
-
-Detalle Astro/deploy: **[astro/README.md](astro/README.md)**.
-
-## Re-crawl (solo si hiciera falta)
+O desde tu PC:
 
 ```bash
-npm run sync
-npm run adapt          # regenerar src/content
-cd astro && npm run prepare
+cd astro && npm run deploy:remote
 ```
 
-Variables: `SYNC_DOWNLOAD_ORIGINALS=0` (mirror sin re-descargar originales), `WGET_WAIT`, `WGET_RATE`.
+Eso hace: `git pull` → `npm ci` → `npm run prepare` → copiar `dist/` a `httpdocs`.
 
-## Imágenes Wix
+## Mirror clásico en local (`:8080`)
 
-| Ubicación | Contenido |
-|-----------|-----------|
-| `static.wixstatic.com/` | Variantes del HTML (`/v1/fill/…`) |
-| `originals/…/media/` | Archivo fuente (`https://static.wixstatic.com/media/<id>`) |
-
-Regenerar solo originales desde HTML local (sin sync):
+Opcional; sirve el adaptador en `dist/` de la raíz del repo:
 
 ```bash
-bash scripts/download-wix-originals.sh
+npm run prepare && npm run dev    # raíz del repo, puerto 8080
 ```
 
-En Astro: `astro/scripts/backup-post-images.mjs`.
+## Scripts deprecados (no usar en operación normal)
 
-## Qué esperar de cada capa
+| Script | Motivo |
+|--------|--------|
+| `npm run sync` (raíz) | Re-crawl Wix; solo `ALLOW_WIX_SYNC=1` |
+| `scripts/download-wix-originals.sh` | Solo `ALLOW_WIX_DOWNLOAD=1` |
+| `astro`: `vendorize:raw`, `backup:post-images` | Sustituidos por `link:assets` + `originals/` |
 
-| Capa | Sirve para | No garantiza |
-|------|------------|--------------|
-| Mirror + `static.*` + `originals/` | Archivo y navegación local | Blog infinito offline ni cero dependencia Wix |
-| `dist/` + `npm run dev` | Clon local con menú (assets en disco) | Idéntico al vivo sin red en APIs `siteassets` |
-| `astro/dist/` | Producción estática, blog completo | Pixel-perfect de `/raw/` Wix |
+## Rutas en producción (Astro)
 
-## Comandos rápidos
-
-```bash
-npm run prepare && npm run dev
-cd astro && npm run prepare && npm run dev
-```
+| Ruta | Contenido |
+|------|-----------|
+| `/` | Home archivada (redirect) |
+| `/blog/todos/` | Blog completo |
+| `/post/<slug>/` | Entrada |
+| `/raw/*` | Páginas Wix (equipo, embarcación, etc.) |

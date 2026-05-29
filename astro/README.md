@@ -1,147 +1,194 @@
 # Línea de migración Astro
 
-Objetivo: migrar el blog a Astro con salida estática para despliegue simple en Plesk, desacoplado de dependencias externas.
+Sitio **offline** tras `git clone`: el contenido vive en el repo (`www.fenicio.es/`, `static.*`, `originals/`, `src/content/`). El build **no** descarga de Wix.
 
-El mirror Wix (`../www.fenicio.es/`, `../originals/`) está **congelado en Git**. `npm run prepare` y `npm run dev` **no** re-descargan el sitio; solo leen archivos locales. Re-crawl: `npm run sync` en la raíz del repo (excepcional).
-
-## Comandos
+## Instalación local (desarrollo)
 
 ```bash
 cd astro
 npm install
-npm run prepare
-npm run dev
+npm run prepare    # sync:content + link:assets + build
+npm run dev        # http://127.0.0.1:4321/
 ```
 
-`npm run prepare` ahora:
+### Qué hace `npm run prepare`
 
-1. Importa posts desde el mirror local.
-2. Copia `www.fenicio.es` a `public/raw`.
-3. Descarga assets externos a `public/vendor`.
-4. Reescribe enlaces para servir local y elimina runtime de scripts.
-5. Genera build estática Astro.
+| Paso | Script | Acción |
+|------|--------|--------|
+| 1 | `sync:content` | `posts.json`, copia mirror → `public/raw`, `originals/`, `static.*` |
+| 2 | `link:assets` | Reescribe URLs en `public/raw` a rutas locales (sin red) |
+| 3 | `build` | Genera `dist/` (sitio estático para producción) |
 
-## Despliegue en Plesk
+Solo necesita **npm** (para instalar Astro) y **git** con el repo completo; no hace falta `wget` ni acceso a Wix.
 
-1. Ejecuta `npm run build` en `astro/`.
-2. Sube el contenido de `astro/dist/` al `httpdocs` del dominio/subdominio en Plesk.
-3. El proyecto incluye `public/.htaccess` para fallback de rutas limpias en Apache.
+### Scripts deprecados
 
-### Flujos recomendados (rápido)
+| No usar | Usar en su lugar |
+|---------|------------------|
+| `npm run vendorize:raw` | `npm run link:assets` |
+| `npm run backup:post-images` | `sync:content` + `originals/` en Git |
+| Raíz: `npm run sync` | Contenido ya en Git |
+| `scripts/download-wix-originals.sh` | `originals/` en Git |
 
-- **SSH manual dentro del servidor (recomendado para operación diaria):**
-  - `npm run deploy:server`
-  - Si `npm` no está en `PATH` (típico en Plesk), usa:
-    - `/opt/plesk/node/24/bin/npm run deploy:server`
-    - fallback: `/opt/plesk/node/22/bin/npm run deploy:server`
-  - El healthcheck verifica Apache en local (`127.0.0.1` + `Host: fenicio.es`) sin depender de DNS público.
-- **Solo actualizar repo + dependencias (sin build/deploy):**
-  - `npm run pull:install`
-- **Desde tu máquina local hacia servidor (SSH root, ejecución remota como `fenicio.es`):**
-  - `npm run deploy:remote`
+Emergencia (solo con red a Wix): `ALLOW_WIX_SYNC=1 npm run sync` en la raíz del repo.
 
-### Pull + install (solo preparación en servidor)
+---
 
-Si entras por SSH manualmente y solo quieres actualizar código + dependencias:
+## Despliegue en servidor (Plesk)
+
+Lo que sirve el dominio es **`astro/dist/`** copiado a `httpdocs`. El código fuente y el mirror quedan fuera del document root (recomendado).
+
+### Requisitos en el servidor
+
+- **Git**: repo completo clonado (no solo la carpeta `astro/`).
+- **Node.js + npm**: Plesk suele tenerlos en `/opt/plesk/node/24/bin/npm` o `.../22/bin/npm`.
+- **Rsync** (para publicar `dist/` → `httpdocs`).
+- Acceso SSH al servidor (root o usuario con permisos en `httpdocs`).
+
+### Estructura recomendada en el servidor
+
+```txt
+/var/www/vhosts/fenicio.es/
+├── app/                          # clone Git (privado, fuera de httpdocs)
+│   ├── www.fenicio.es/
+│   ├── static.parastorage.com/
+│   ├── static.wixstatic.com/
+│   ├── originals/
+│   ├── src/content/
+│   └── astro/                    # aquí se ejecutan npm y el build
+│       ├── package.json
+│       ├── dist/                 # generado por prepare (no commitear)
+│       └── scripts/
+└── httpdocs/                     # document root público (= contenido de dist/)
+```
+
+### Primera instalación en el servidor
+
+Conéctate por SSH y clona el repo (ajusta URL y rama):
 
 ```bash
+# Como root o usuario con acceso al vhost
+mkdir -p /var/www/vhosts/fenicio.es/app
+cd /var/www/vhosts/fenicio.es/app
+git clone <URL-del-repo> .
+git checkout main
+
 cd astro
-npm run pull:install
+/opt/plesk/node/24/bin/npm install    # o: npm install si está en PATH
+/opt/plesk/node/24/bin/npm run prepare
 ```
 
-Variables opcionales:
-
-- `DEPLOY_BRANCH` (default: `main`)
-- `USE_NPM_CI` (default: `1`, usa `0` para `npm install`)
-
-### Install + build + deploy (ejecución manual dentro del servidor)
-
-Si ya estás conectado por SSH al servidor y quieres todo en un único comando:
+Publicar por primera vez:
 
 ```bash
-cd astro
-npm run deploy:server
+cd /var/www/vhosts/fenicio.es/app/astro
+DEPLOY_LOCAL=1 npm run deploy:server
 ```
 
-Este comando ejecuta `pull + install + build + deploy` en local (`DEPLOY_LOCAL=1`) y lanza healthcheck final.
+Eso ejecuta: `git pull` → `npm ci` → `npm run prepare` → `rsync dist/` → `httpdocs` → healthcheck.
 
-### Despliegue automático por SSH (rsync)
+### Actualizar producción (cada cambio que subas a Git)
+
+**En tu máquina:**
 
 ```bash
-cd astro
-npm run deploy:plesk
+git add …
+git commit -m "…"
+git push origin main
 ```
 
-Valores por defecto ya configurados en scripts:
-
-- `PLESK_SSH_TARGET=root@vigorous-pike`
-- `PLESK_HTTPDOCS_PATH=/var/www/vhosts/fenicio.es/httpdocs`
-- `DEPLOY_OWNER=fenicio.es`
-- `DEPLOY_GROUP=psacln`
-
-Si quieres sobrescribirlos puntualmente, exporta variables antes de ejecutar.
-
-### Pull + Build + Deploy en un solo paso
+**En el servidor** (método habitual, ya dentro del clone):
 
 ```bash
-cd astro
-# opcional: export DEPLOY_BRANCH="main"
-# opcional: export USE_NPM_CI="1"
-npm run deploy:full
+cd /var/www/vhosts/fenicio.es/app/astro
+/opt/plesk/node/24/bin/npm run deploy:server
 ```
 
-El script limpia `astro/public/vendor/` antes de hacer `git pull` para evitar bloqueos por archivos generados modificados en servidor.
-
-Si ejecutas el script dentro del propio servidor Plesk (SSH local), evita el salto SSH remoto:
-
-```bash
-DEPLOY_LOCAL=1 npm run deploy:full
-```
-
-### Despliegue one-click desde tu máquina local (SSH root, ejecución como fenicio.es)
-
-Este flujo entra por SSH como `root`, pero ejecuta la build/deploy como usuario `fenicio.es` en servidor.
+**Desde tu máquina** (un solo comando vía SSH; no entras al servidor):
 
 ```bash
 cd astro
 npm run deploy:remote
 ```
 
-Variables opcionales:
+Esto entra como `root@vigorous-pike`, ejecuta el build como usuario `fenicio.es` y ajusta permisos de `httpdocs`.
 
-- `PLESK_SSH_TARGET` (default: `root@vigorous-pike`)
-- `REMOTE_ASTRO_DIR` (default: `/var/www/vhosts/fenicio.es/app/astro`)
-- `REMOTE_RUN_AS` (default: `fenicio.es`)
-- `DEPLOY_BRANCH` (default: `main`)
-- `USE_NPM_CI` (default: `1`)
-- `HEALTHCHECK_CONNECT_IP` (default: `127.0.0.1`)
+### Otros comandos útiles
 
-### Variables de entorno útiles (resumen)
+| Comando | Cuándo |
+|---------|--------|
+| `npm run pull:install` | Solo `git pull` + `npm ci` (sin build ni publicar) |
+| `npm run build` | Solo regenerar `dist/` (tras `prepare` previo o cambios menores) |
+| `npm run deploy:plesk` | Publicar `dist/` por rsync SSH (sin pull; asume `dist/` ya generado) |
+| `DEPLOY_LOCAL=1 npm run deploy:full` | Igual que `deploy:server` (alias vía `pull-and-deploy.sh`) |
+| `npm run healthcheck:local` | Comprueba rutas en Apache local (`Host: fenicio.es`) |
 
-- **Git/NPM**
-  - `DEPLOY_BRANCH` (default: `main`)
-  - `USE_NPM_CI` (default: `1`; si `0` usa `npm install`)
-- **Destino Plesk**
-  - `PLESK_HTTPDOCS_PATH` (default: `/var/www/vhosts/fenicio.es/httpdocs`)
-  - `DEPLOY_OWNER` (default: `fenicio.es`)
-  - `DEPLOY_GROUP` (default: `psacln`)
-- **Conectividad/healthcheck**
-  - `PLESK_SSH_TARGET` (default: `root@vigorous-pike`)
-  - `HEALTHCHECK_CONNECT_IP` (default: `127.0.0.1`)
-  - `HEALTHCHECK_APACHE_IP` (opcional; fuerza IP local/no-loopback para fallback de comprobación)
-- **Wrapper remoto local->servidor**
-  - `REMOTE_ASTRO_DIR` (default: `/var/www/vhosts/fenicio.es/app/astro`)
-  - `REMOTE_RUN_AS` (default: `fenicio.es`)
+### Variables de entorno (opcionales)
 
-## Fuente de datos actual
+| Variable | Default | Uso |
+|----------|---------|-----|
+| `DEPLOY_BRANCH` | `main` | Rama a desplegar |
+| `USE_NPM_CI` | `1` | `npm ci` (`0` → `npm install`) |
+| `PLESK_HTTPDOCS_PATH` | `/var/www/vhosts/fenicio.es/httpdocs` | Destino público |
+| `PLESK_SSH_TARGET` | `root@vigorous-pike` | SSH para `deploy:remote` / `deploy:plesk` |
+| `REMOTE_ASTRO_DIR` | `/var/www/vhosts/fenicio.es/app/astro` | Ruta del proyecto en el servidor |
+| `REMOTE_RUN_AS` | `fenicio.es` | Usuario que ejecuta el build en remoto |
+| `DEPLOY_OWNER` / `DEPLOY_GROUP` | `fenicio.es` / `psacln` | Owner de archivos en `httpdocs` |
+| `HEALTHCHECK_CONNECT_IP` | `127.0.0.1` | IP para curl al vhost local |
 
-`scripts/import-from-mirror.mjs` importa posts desde:
+Ejemplo con rama distinta:
 
-`../src/content/pages/post/*.html`
+```bash
+DEPLOY_BRANCH=main USE_NPM_CI=1 npm run deploy:server
+```
 
-## Desacople total (fidelidad visual)
+### Publicación manual (sin scripts)
 
-- `scripts/vendorize-raw.mjs` procesa `public/raw/**/*.html|css`.
-- Reescribe URLs de `fenicio.es`/`www.fenicio.es` a `/raw/...`.
-- Descarga recursos externos a `/vendor/...`.
-- Elimina `<script>` para evitar dependencia de runtime/API de Wix.
+Si prefieres hacerlo a mano tras un `prepare`:
+
+```bash
+cd /var/www/vhosts/fenicio.es/app/astro
+npm run prepare
+rsync -av --delete dist/ /var/www/vhosts/fenicio.es/httpdocs/
+chown -R fenicio.es:psacln /var/www/vhosts/fenicio.es/httpdocs
+```
+
+### Qué se publica y qué no
+
+| Se copia a `httpdocs` | No se expone |
+|----------------------|--------------|
+| Contenido de `astro/dist/` | `www.fenicio.es/`, `originals/`, fuentes en `src/` |
+| `.htaccess` (desde `public/`) | `node_modules/`, scripts de build |
+
+El build **empaqueta** en `dist/` lo necesario (`raw/`, `static.*`, `originals/`, blog Astro, posts).
+
+### Comprobación tras desplegar
+
+```bash
+curl -sI -H 'Host: fenicio.es' http://127.0.0.1/ | head -5
+curl -sI -H 'Host: fenicio.es' http://127.0.0.1/blog/todos/ | head -5
+```
+
+O: `npm run healthcheck:local` dentro de `astro/`.
+
+### Inicio `/` → `/raw/index.html`
+
+- `public/index.html` hace un salto directo (meta refresh) a la home archivada.
+- En Apache, `.htaccess` reescribe `/` → `/raw/index.html` sin pasar por Astro.
+- **No** uses `redirects` en `astro.config.mjs`: en `astro dev` Astro muestra una pantalla *“Redirecting from / to …”* que parece un bloqueo del navegador, pero es solo el modo desarrollo.
+
+---
+
+## Fuente de datos
+
+- Posts: `../src/content/pages/post/*.html` + `og:image` en `../www.fenicio.es/post/*.html`.
+- Imágenes: `../originals/static.wixstatic.com/media/` (prioridad) y `../static.wixstatic.com/`.
+
+## Rutas del sitio
+
+| Ruta | Descripción |
+|------|-------------|
+| `/` | Redirige a home archivada (`/raw/index.html`) |
+| `/raw/*` | Páginas Wix archivadas |
+| `/blog/todos/` | Listado completo de entradas |
+| `/post/<slug>/` | Entrada migrada |
