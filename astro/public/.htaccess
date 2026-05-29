@@ -6,6 +6,10 @@ RewriteEngine On
 RewriteRule ^blog/todos/?$ /blog/ [R=301,L]
 RewriteRule ^blog/todos/page/([0-9]+)/?$ /blog/page/$1/ [R=301,L]
 
+# Rutas Astro stub (/equipo/, /embarcacion/) → HTML Wix en raíz
+RewriteRule ^equipo/?$ /equipo.html [R=301,L]
+RewriteRule ^embarcacion/?$ /embarcación.html [R=301,L]
+
 # Sirve archivos y directorios reales
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d

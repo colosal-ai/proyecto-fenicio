@@ -1,7 +1,22 @@
 ---
 import "../styles/global.css";
+
 const { title = "Fenicio", showHeader = true } = Astro.props;
 const canonicalHref = Astro.site ? new URL(Astro.url.pathname, Astro.site).toString() : undefined;
+
+/** Páginas Wix archivadas en raíz de dist/ (no los stubs /equipo/ ni /embarcacion/). */
+const NAV = [
+  { href: "/", label: "El Proyecto" },
+  { href: "/equipo.html", label: "El Equipazo" },
+  { href: "/embarcación.html", label: "La Máquina" },
+  { href: "/blog/", label: "El Libro de Bitácora" }
+];
+
+function navIsCurrent(href: string, pathname: string) {
+  if (href === "/") return pathname === "/" || pathname === "/index.html";
+  if (href.endsWith(".html")) return pathname === href || pathname === `/raw${href}`;
+  return pathname === href || pathname.startsWith(`${href.replace(/\/$/, "")}/`);
+}
 ---
 <!doctype html>
 <html lang="es">
@@ -17,10 +32,14 @@ const canonicalHref = Astro.site ? new URL(Astro.url.pathname, Astro.site).toStr
         <div class="site-header-inner">
           <a class="site-brand" href="/">Amigos del Fenicio</a>
           <nav class="site-nav" aria-label="Principal">
-            <a href="/">El Proyecto</a>
-            <a href="/equipo/">El Equipazo</a>
-            <a href="/embarcacion/">La Máquina</a>
-            <a href="/blog/">El Libro de Bitácora</a>
+            {NAV.map(({ href, label }) => (
+              <a
+                href={href}
+                aria-current={navIsCurrent(href, Astro.url.pathname) ? "page" : undefined}
+              >
+                {label}
+              </a>
+            ))}
           </nav>
         </div>
       </header>
