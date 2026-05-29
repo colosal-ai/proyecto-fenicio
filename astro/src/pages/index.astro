@@ -1,0 +1,20 @@
+---
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+
+const file = path.join(process.cwd(), "public", "index.html");
+
+let html: string;
+try {
+  html = await readFile(file, "utf-8");
+} catch {
+  return new Response(
+    "<!DOCTYPE html><meta charset=utf-8><p>Falta <code>public/index.html</code>. Ejecuta <code>npm run dev</code> (incluye <code>stage:public</code>) o <code>npm run prepare</code>.</p>",
+    { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } },
+  );
+}
+
+return new Response(html, {
+  headers: { "Content-Type": "text/html; charset=utf-8" },
+});
+---

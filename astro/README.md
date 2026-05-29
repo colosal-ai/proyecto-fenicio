@@ -20,7 +20,7 @@ npm run dev        # http://127.0.0.1:4321/
 | 3 | `build` | Rutas Astro → `dist/` |
 | 4 | `publish:generated` | `.generated/` → `dist/` (producción) |
 
-`npm run dev` usa `stage:public` (copia temporal a `public/`, gitignored) para servir `/raw/`.
+`npm run dev` usa `stage:public` (copia temporal a `public/`, gitignored) para servir `/raw/`. La ruta `/` en dev la resuelve `src/pages/index.astro` leyendo `public/index.html` (Astro no enlaza solo `public/index.html` en `/`).
 
 Solo necesita **npm** (para instalar Astro) y **git** con el repo completo; no hace falta `wget` ni acceso a Wix.
 

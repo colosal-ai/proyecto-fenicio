@@ -102,6 +102,35 @@ function injectArchiveLayoutFix(content) {
   return `${ARCHIVE_LAYOUT_FIX}${content}`;
 }
 
+/** Crema del tema Wix (--color_11: 248,244,241) semitransparente sobre el bloque de texto. */
+const FENICIO_CREAM_OVERLAY = "rgba(248, 244, 241, 0.84)";
+
+const TEXT_OVERLAY_BY_PAGE = {
+  "index.html": "comp-lm3cvp8rinlineContent",
+  "embarcación.html": "comp-ljgz0u32inlineContent"
+};
+
+function injectPageTextOverlay(content, relativePath) {
+  const meshId = TEXT_OVERLAY_BY_PAGE[relativePath];
+  if (!meshId) return content;
+
+  const overlayStyle = `<style id="fenicio-text-overlay">
+[data-mesh-id="${meshId}"]{
+  position:relative;
+  z-index:2;
+  background-color:${FENICIO_CREAM_OVERLAY}!important;
+  padding:1.25rem 1.75rem!important;
+  box-sizing:border-box;
+}
+</style>`;
+
+  if (content.includes('id="fenicio-text-overlay"')) return content;
+  if (/<\/head>/i.test(content)) {
+    return content.replace(/<\/head>/i, `${overlayStyle}</head>`);
+  }
+  return `${overlayStyle}${content}`;
+}
+
 function wixAssetIdFromPath(pathname) {
   const m = pathname.match(WIX_ASSET_ID);
   return m ? m[1] : "";
@@ -109,8 +138,9 @@ function wixAssetIdFromPath(pathname) {
 
 const ORIGINALS_PUBLIC_PREFIX = "/originals/static.wixstatic.com/media";
 const WIX_ASSET_ID = /(344230_[A-Za-z0-9_.~-]+\.(?:jpg|jpeg|png|webp|avif))/i;
+/** No matchear /originals/static.wixstatic.com/… (evita /originals/originals/…). */
 const WIX_MEDIA_URL =
-  /(?:https?:\/\/static\.wixstatic\.com\/media\/|\/static\.wixstatic\.com\/media\/)(344230_[A-Za-z0-9_.~-]+\.(?:jpg|jpeg|png|webp|avif))(?:\/[^"'\\)\s<>]*)?/gi;
+  /(?:https?:\/\/static\.wixstatic\.com\/media\/|(?<!\/originals\/)\/static\.wixstatic\.com\/media\/)(344230_[A-Za-z0-9_.~-]+\.(?:jpg|jpeg|png|webp|avif))(?:\/[^"'\\)\s<>]*)?/gi;
 
 function originalPublicUrl(assetId) {
   if (!assetId || !existsSync(path.join(ORIGINALS_DIR, assetId))) return "";
@@ -234,7 +264,12 @@ function localUrlForAbsolute(urlString) {
 function normalizeRelativeMirrorPaths(content) {
   return content
     .replace(/(?:\.\.\/)+static\.parastorage\.com\//g, `${PARASTORAGE_PUBLIC}/`)
+    .replace(/(?:\.\.\/)+originals\//g, "/originals/")
     .replace(/(?:\.\.\/)+static\.wixstatic\.com\//g, `${WIXSTATIC_PUBLIC}/`);
+}
+
+function dedupeOriginalsPublicPrefix(content) {
+  return content.replaceAll("/originals/originals/", "/originals/");
 }
 
 function stripScripts(content) {
@@ -266,7 +301,9 @@ async function main() {
     const absolute = path.join(RAW_DIR, relative);
     let content = await readFile(absolute, "utf-8");
     content = normalizeRelativeMirrorPaths(content);
+    content = dedupeOriginalsPublicPrefix(content);
     content = upgradeWixMediaUrls(content);
+    content = dedupeOriginalsPublicPrefix(content);
 
     content = content.replace(
       /(https?:\\\/\\\/[^\s"'<>]+|https?:\/\/[^\s"'<>]+)/g,
@@ -280,6 +317,7 @@ async function main() {
       content = normalizeWixPublicBaseUrls(content, relative);
       content = removeWixMoreMenuItem(content);
       content = injectArchiveLayoutFix(content);
+      content = injectPageTextOverlay(content, relative);
       content = stripScripts(content);
       content = content.replace(
         /(href|src)=["'](?:\.\/)?blog\.html["']/gi,
