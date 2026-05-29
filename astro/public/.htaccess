@@ -1,12 +1,24 @@
 RewriteEngine On
 
-# Raíz: servir home archivada (sin cadena de redirecciones Astro)
+# Raíz → home archivada Wix
 RewriteRule ^$ /raw/index.html [L]
 
-# Sirve archivos/directorios existentes sin reescritura
+# Sirve archivos y directorios reales (index.html raíz, assets, /equipo/, …)
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-# Fallback a index.html para rutas limpias estáticas
+# URLs Wix en la raíz: /equipo.html → /raw/equipo.html (y blog/page/2.html, etc.)
+RewriteCond %{DOCUMENT_ROOT}/raw/$1.html -f
+RewriteRule ^(.+)\.html$ /raw/$1.html [L]
+
+# Posts Wix: /post/slug.html → /post/slug/ (Astro)
+RewriteRule ^post/(.+)\.html$ /post/$1/ [R=301,L]
+
+# blog.html del mirror → listado Astro (si no existe raw/blog.html servido arriba)
+RewriteRule ^blog\.html$ /blog/ [R=301,L]
+
+# Rutas limpias Astro: /blog/todos → /blog/todos/index.html
+RewriteCond %{REQUEST_URI} !\.[a-zA-Z0-9]{2,5}$ [NC]
+RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
 RewriteRule ^(.+?)/?$ /$1/index.html [L]
