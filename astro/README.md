@@ -189,7 +189,7 @@ O: `npm run healthcheck:local` dentro de `astro/`.
 ### Inicio `/` y menú de cabecera
 
 - Tras `prepare`, `publish:generated` copia `index.html`, `equipo.html`, etc. en la **raíz de `dist/`** (mismo HTML que `/raw/`, URL pública `/` o `/equipo.html`).
-- `link:assets` ajusta `externalBaseUrl` a `/`, CSS de respaldo (menú + móvil; el mirror Wix es **980px fijo**, `isResponsive: false`).
+- `link:assets` ajusta `externalBaseUrl` a `/`, menú sin JS, oculta «More»; el mirror es **980px fijo** (en móvil: scroll horizontal, sin re-maquetar).
 - En dev: `npm run dev` ejecuta `stage:public` y deja esas páginas también en `public/` (sustituye el stub `public/index.html` del repo).
 - **No** uses `redirects` en `astro.config.mjs` para `/`.
 

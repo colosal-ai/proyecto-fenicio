@@ -69,35 +69,30 @@ function normalizeWixPublicBaseUrls(content, relativePath) {
 }
 
 const ARCHIVE_LAYOUT_FIX = `<style id="fenicio-archive-layout">
-/* Sin Thunderbolt: menú horizontal y centrado en cabecera */
+/* Sin Thunderbolt: menú horizontal y centrado en cabecera (layout 980px intacto) */
 #comp-ju1005uj.hidden-during-prewarmup{visibility:visible!important}
 #comp-ju1005uj,#comp-ju1005uj .pols_4,#comp-ju1005uj nav{height:50px}
 #comp-ju1005uj .wTjmlM{display:flex;flex-direction:row;align-items:center;justify-content:center;height:100%;text-align:center}
 #comp-ju1005uj .agzDLy{display:inline-flex;align-items:center;height:100%;--display:inline-flex}
 #comp-ju1005uj .wNTNML,#comp-ju1005uj .MKZTGU{display:flex;align-items:center;height:100%}
 #SITE_HEADER [data-mesh-id="SITE_HEADERinlineContent-gridContainer"]{align-items:center}
-/* Wix clásico 980px (isResponsive:false): fluido en pantallas estrechas */
-html{overflow-x:hidden}
-#SITE_CONTAINER,#site-root,#masterPage{width:100%;max-width:100vw;min-width:0}
-#SITE_CONTAINER section[id^="comp-"],#SITE_CONTAINER .wixui-section{min-width:0!important;max-width:100%!important;box-sizing:border-box}
-#SITE_CONTAINER [data-mesh-id*="gridContainer"]>[id^="comp-"],
-#SITE_CONTAINER [data-mesh-id*="gridContainer"]>interact-element>[id^="comp-"]{margin-left:0!important;margin-right:0!important;left:0!important;width:100%!important;max-width:100%!important}
-#SITE_CONTAINER .Qh0lWW img,#SITE_CONTAINER wow-image img{max-width:100%!important;height:auto!important}
-#SITE_CONTAINER .wixui-rich-text,[data-testid="richTextElement"]{max-width:100%!important;overflow-wrap:break-word}
-@media (max-width:1000px){
-:root{--site-width:100%!important}
-#comp-l2pwao3j{width:auto!important;max-width:min(364px,92vw)!important;margin-left:auto!important;margin-right:auto!important;left:auto!important}
-#comp-ju1005uj{width:100%!important;max-width:100%!important;margin:4px 0!important;left:auto!important}
-#SITE_HEADER [data-mesh-id="SITE_HEADERinlineContent-gridContainer"]{display:flex!important;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px}
-}
-@media (max-width:640px){
-#comp-ju1005uj,#comp-ju1005uj .pols_4,#comp-ju1005uj nav{height:auto;min-height:44px}
-#comp-ju1005uj .wTjmlM{flex-wrap:wrap;height:auto;padding:6px 4px;gap:2px 8px}
-#comp-ju1005uj .agzDLy .MKZTGU{padding:4px 8px}
-#comp-ju1005uj .VhM8Ji{font-size:13px!important;line-height:1.3!important;white-space:normal!important}
-#comp-l2pwao3j h2{font-size:clamp(22px,6vw,38px)!important}
+/* Ocultar ítem "More" del menú Wix y anclas de scroll sin JS */
+#comp-ju1005uj__more__,li[id$="__more__"]{display:none!important}
+#SCROLL_TO_TOP,#SCROLL_TO_BOTTOM{display:none!important}
+/* Pie Wix del mirror: vacío pero con franja gris (--color_39); sin JS no aporta */
+#SITE_FOOTER{display:none!important}
+/* Móvil: no re-fluidificar; scroll horizontal del lienzo 980px */
+@media (max-width:999px){
+html{overflow-x:auto}
+body{min-width:0}
+#SITE_CONTAINER{min-width:980px}
 }
 </style>`;
+
+/** Quita el ítem "More" del dropdown Wix en HTML. */
+function removeWixMoreMenuItem(content) {
+  return content.replace(/<li\b[^>]*\bid="[^"]*__more__"[^>]*>[\s\S]*?<\/li>/gi, "");
+}
 
 function injectArchiveLayoutFix(content) {
   if (content.includes('id="fenicio-archive-layout"')) return content;
@@ -283,6 +278,7 @@ async function main() {
 
     if (relative.endsWith(".html")) {
       content = normalizeWixPublicBaseUrls(content, relative);
+      content = removeWixMoreMenuItem(content);
       content = injectArchiveLayoutFix(content);
       content = stripScripts(content);
       content = content.replace(
