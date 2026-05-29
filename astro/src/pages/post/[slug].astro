@@ -13,7 +13,7 @@ const { slug } = Astro.props;
 const post = posts.find((item) => item.slug === slug);
 
 if (!post) {
-  return Astro.redirect("/blog/todos/");
+  return Astro.redirect("/blog/");
 }
 
 function collectAssetIds(value = "") {

@@ -166,7 +166,7 @@ async function main() {
         (_full, attr, slug) => `${attr}="/post/${slug}/"`
       );
       if (relative === "blog.html") {
-        content = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Redirigiendo al blog completo</title><meta http-equiv="refresh" content="0; url=/blog/todos/"><link rel="canonical" href="/blog/todos/"></head><body><p>Redirigiendo al listado completo: <a href="/blog/todos/">/blog/todos/</a></p></body></html>`;
+        content = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Redirigiendo al blog</title><meta http-equiv="refresh" content="0; url=/blog/"><link rel="canonical" href="/blog/"></head><body><p>Redirigiendo al blog: <a href="/blog/">/blog/</a></p></body></html>`;
       }
     }
 

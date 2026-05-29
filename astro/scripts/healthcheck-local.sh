@@ -116,7 +116,8 @@ check_route() {
 # Comprobación local prioritaria: loopback HTTP con Host header.
 if check_route "http://127.0.0.1" "/" \
   && check_route "http://127.0.0.1" "/blog/" \
-  && check_route "http://127.0.0.1" "/equipo.html"; then
+  && check_route "http://127.0.0.1" "/equipo.html" \
+  && check_route "http://127.0.0.1" "/blog/"; then
   echo "Healthcheck OK: Apache local sirve correctamente el vhost ${HEALTHCHECK_DOMAIN}."
   exit 0
 fi
@@ -127,7 +128,8 @@ if [[ -n "${fallback_ip:-}" ]]; then
   echo "Aviso: fallback a IP local/no-loopback ${fallback_ip}."
   if check_route "http://${fallback_ip}" "/" \
     && check_route "http://${fallback_ip}" "/blog/" \
-    && check_route "http://${fallback_ip}" "/equipo.html"; then
+    && check_route "http://${fallback_ip}" "/equipo.html" \
+    && check_route "http://${fallback_ip}" "/blog/"; then
     echo "Healthcheck OK: Apache sirve correctamente el vhost ${HEALTHCHECK_DOMAIN} por IP local."
     exit 0
   fi

@@ -181,7 +181,7 @@ El build **empaqueta** en `dist/` lo necesario (`raw/`, `static.*`, `originals/`
 
 ```bash
 curl -sI -H 'Host: fenicio.es' http://127.0.0.1/ | head -5
-curl -sI -H 'Host: fenicio.es' http://127.0.0.1/blog/todos/ | head -5
+curl -sI -H 'Host: fenicio.es' http://127.0.0.1/blog/ | head -5
 ```
 
 O: `npm run healthcheck:local` dentro de `astro/`.
@@ -205,5 +205,5 @@ O: `npm run healthcheck:local` dentro de `astro/`.
 |------|-------------|
 | `/` | Redirige a home archivada (`/raw/index.html`) |
 | `/raw/*` | Páginas Wix archivadas |
-| `/blog/todos/` | Listado completo de entradas |
+| `/blog/` | Listado completo de entradas (`/blog/todos/` redirige aquí con 301) |
 | `/post/<slug>/` | Entrada migrada |

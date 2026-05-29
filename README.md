@@ -68,6 +68,6 @@ npm run prepare && npm run dev    # raíz del repo, puerto 8080
 | Ruta | Contenido |
 |------|-----------|
 | `/` | Home archivada (redirect) |
-| `/blog/todos/` | Blog completo |
+| `/blog/` | Blog completo |
 | `/post/<slug>/` | Entrada |
 | `/raw/*` | Páginas Wix (equipo, embarcación, etc.) |
