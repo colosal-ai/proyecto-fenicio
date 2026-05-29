@@ -186,6 +186,23 @@ curl -sI -H 'Host: fenicio.es' http://127.0.0.1/blog/ | head -5
 
 O: `npm run healthcheck:local` dentro de `astro/`.
 
+### SSL / Let's Encrypt (`/.well-known/acme-challenge/`)
+
+Un `301` de **http** a **https** en `/.well-known/acme-challenge/…` lo genera **Plesk** (“Redirigir HTTP a HTTPS”), no el `.htaccess` del sitio. Es normal al probar con `curl -I http://fenicio.es/.well-known/acme-challenge/test`.
+
+- Renovar certificado: **Plesk → Dominios → fenicio.es → SSL/TLS → Let's Encrypt** (el panel escribe el token en `httpdocs/.well-known/acme-challenge/`).
+- El `.htaccess` del repo **no reescribe** `/.well-known/` (regla al inicio del fichero).
+- Si la renovación falla: en **Hosting Settings** desactiva un momento “Permanent SEO-safe redirect from HTTP to HTTPS”, renueva, y vuelve a activar; o añade en **Apache & nginx Settings → Additional directives** (solo si el panel no exime ACME):
+
+```apache
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+```
+
+Comprueba el token real (no `test`): `curl -sI https://fenicio.es/.well-known/acme-challenge/<token>` debe ser **200** durante la emisión.
+
 ### Inicio `/` y menú de cabecera
 
 - Tras `prepare`, `publish:generated` copia `index.html`, `equipo.html`, etc. en la **raíz de `dist/`** (mismo HTML que `/raw/`, URL pública `/` o `/equipo.html`).

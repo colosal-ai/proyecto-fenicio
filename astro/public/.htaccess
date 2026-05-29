@@ -1,5 +1,8 @@
 RewriteEngine On
 
+# ACME HTTP-01 (Let's Encrypt / Plesk): no reescribir; el token lo sirve el panel o httpdocs/.well-known/
+RewriteRule ^\.well-known/ - [L]
+
 # / sirve dist/index.html (copia de prepare en raíz; no rewrite interno a /raw/)
 
 # Alias antiguo /blog/todos/ → /blog/ (una sola redirección 301)
