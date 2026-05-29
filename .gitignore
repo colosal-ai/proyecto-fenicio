@@ -3,11 +3,12 @@ node_modules/
 dist/
 *.log
 
-# Astro — solo versionar código + public/index.html y .htaccess
+# Astro — solo versionar código + public/.htaccess (HTML Wix = stage:public → public/)
 astro/node_modules/
 astro/dist/
 astro/.astro/
 astro/.generated/
+astro/public/*.html
 astro/public/raw/
 astro/public/static.parastorage.com/
 astro/public/static.wixstatic.com/
