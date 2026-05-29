@@ -1,5 +1,5 @@
 /**
- * Reescribe public/raw desde assets ya presentes en el repo (sin red).
+ * Reescribe .generated/raw desde assets del repo (sin red).
  * Sustituye a vendorize-raw.mjs (deprecado).
  */
 import { existsSync, statSync } from "node:fs";
@@ -8,8 +8,8 @@ import path from "node:path";
 
 const ROOT = process.cwd();
 const REPO_ROOT = path.resolve(ROOT, "..");
-const RAW_DIR = path.join(ROOT, "public", "raw");
-const ORIGINALS_DIR = path.join(ROOT, "public", "originals/static.wixstatic.com/media");
+const RAW_DIR = path.join(ROOT, ".generated", "raw");
+const ORIGINALS_DIR = path.join(ROOT, ".generated", "originals/static.wixstatic.com/media");
 const PARASTORAGE_PUBLIC = "/static.parastorage.com";
 const WIXSTATIC_PUBLIC = "/static.wixstatic.com";
 
@@ -175,7 +175,7 @@ async function main() {
   }
 
   console.log(
-    `Enlaces locales aplicados (sin red). Archivos: ${rewrittenFiles}. Assets: ${PARASTORAGE_PUBLIC}, ${WIXSTATIC_PUBLIC}, /originals/…`
+    `Enlaces locales en .generated/raw (${rewrittenFiles} archivos). Rutas: ${PARASTORAGE_PUBLIC}, ${WIXSTATIC_PUBLIC}, /originals/…`
   );
 }
 

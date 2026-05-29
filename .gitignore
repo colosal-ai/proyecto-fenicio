@@ -3,15 +3,14 @@ node_modules/
 dist/
 *.log
 
-# Astro (generado en npm run prepare — no versionar)
+# Astro — solo versionar código + public/index.html y .htaccess
 astro/node_modules/
 astro/dist/
 astro/.astro/
+astro/.generated/
 astro/public/raw/
 astro/public/static.parastorage.com/
 astro/public/static.wixstatic.com/
 astro/public/originals/
 astro/public/vendor/
 astro/public/backup/
-
-# Mantener en Git: astro/public/.htaccess, astro/public/index.html

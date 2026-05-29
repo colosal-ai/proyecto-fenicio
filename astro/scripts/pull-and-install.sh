@@ -30,6 +30,7 @@ detect_npm() {
 }
 
 echo "==> [1/3] Sincronizando repositorio (rama: ${BRANCH})"
+bash "$ROOT_DIR/scripts/clean-generated-public.sh"
 cd "$REPO_DIR"
 git fetch origin
 git checkout "$BRANCH"

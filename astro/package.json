@@ -6,9 +6,12 @@
   "scripts": {
     "sync:content": "node scripts/import-from-mirror.mjs",
     "link:assets": "node scripts/link-assets-local.mjs",
+    "publish:generated": "node scripts/publish-generated-to-dist.mjs",
+    "stage:public": "node scripts/stage-generated-to-public.mjs",
+    "clean:generated": "bash scripts/clean-generated-public.sh",
     "vendorize:raw": "node scripts/vendorize-raw.mjs",
     "backup:post-images": "node scripts/backup-post-images.mjs",
-    "dev": "astro dev",
+    "dev": "npm run stage:public && astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "healthcheck:local": "bash scripts/healthcheck-local.sh",
@@ -17,7 +20,7 @@
     "deploy:plesk": "bash scripts/deploy-plesk.sh",
     "deploy:remote": "bash scripts/deploy-remote-ssh.sh",
     "deploy:full": "bash scripts/pull-and-deploy.sh",
-    "prepare": "npm run sync:content && npm run link:assets && npm run build"
+    "prepare": "npm run sync:content && npm run link:assets && npm run build && npm run publish:generated"
   },
   "dependencies": {
     "astro": "^5.8.0"

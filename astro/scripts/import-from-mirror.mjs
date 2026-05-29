@@ -6,14 +6,18 @@ const ROOT = process.cwd();
 const CONTENT_ROOT = path.resolve(ROOT, "../src/content/pages/post");
 const RAW_SOURCE_ROOT = path.resolve(ROOT, "../www.fenicio.es");
 const OUTPUT_FILE = path.resolve(ROOT, "src/data/posts.json");
-const RAW_PUBLIC_DIR = path.resolve(ROOT, "public/raw");
+const GENERATED_ROOT = path.resolve(ROOT, ".generated");
+const RAW_GENERATED_DIR = path.join(GENERATED_ROOT, "raw");
 const REPO_ROOT = path.resolve(ROOT, "..");
 const ORIGINALS_SOURCE_DIR = path.resolve(REPO_ROOT, "originals/static.wixstatic.com/media");
-const ORIGINALS_PUBLIC_DIR = path.resolve(ROOT, "public/originals/static.wixstatic.com/media");
+const ORIGINALS_GENERATED_DIR = path.join(
+  GENERATED_ROOT,
+  "originals/static.wixstatic.com/media"
+);
 const MIRROR_PARASTORAGE_SRC = path.resolve(REPO_ROOT, "static.parastorage.com");
 const MIRROR_WIXSTATIC_SRC = path.resolve(REPO_ROOT, "static.wixstatic.com");
-const MIRROR_PARASTORAGE_PUBLIC = path.resolve(ROOT, "public/static.parastorage.com");
-const MIRROR_WIXSTATIC_PUBLIC = path.resolve(ROOT, "public/static.wixstatic.com");
+const MIRROR_PARASTORAGE_GENERATED = path.join(GENERATED_ROOT, "static.parastorage.com");
+const MIRROR_WIXSTATIC_GENERATED = path.join(GENERATED_ROOT, "static.wixstatic.com");
 const THUMBNAIL_OVERRIDES = {
   "tabarca-vela-en-directo-3-jornada":
     "344230_b90647a1dcb3472aaa7f62be57d52e3a~mv2.jpg"
@@ -37,7 +41,7 @@ async function listHtmlFiles(dir) {
 
 function localMirrorWixMediaUrl(assetId) {
   if (!assetId) return "";
-  const originalAbs = path.join(ORIGINALS_PUBLIC_DIR, assetId);
+  const originalAbs = path.join(ORIGINALS_GENERATED_DIR, assetId);
   if (existsSync(originalAbs)) {
     return `/originals/static.wixstatic.com/media/${assetId}`;
   }
@@ -170,7 +174,7 @@ function localBackupThumbnailUrl(slug, assetId) {
 function localOriginalMediaUrl(assetId) {
   if (!assetId) return "";
   const rel = `/originals/static.wixstatic.com/media/${assetId}`;
-  const abs = path.join(ORIGINALS_PUBLIC_DIR, assetId);
+  const abs = path.join(ORIGINALS_GENERATED_DIR, assetId);
   return existsSync(abs) ? rel : "";
 }
 
@@ -360,23 +364,20 @@ function parseSpanishDate(value) {
 }
 
 async function main() {
-  await rm(RAW_PUBLIC_DIR, { recursive: true, force: true });
-  await mkdir(path.dirname(RAW_PUBLIC_DIR), { recursive: true });
-  await cp(RAW_SOURCE_ROOT, RAW_PUBLIC_DIR, { recursive: true });
+  await rm(GENERATED_ROOT, { recursive: true, force: true });
+  await mkdir(RAW_GENERATED_DIR, { recursive: true });
+  await cp(RAW_SOURCE_ROOT, RAW_GENERATED_DIR, { recursive: true });
 
-  await rm(path.dirname(ORIGINALS_PUBLIC_DIR), { recursive: true, force: true });
   if (existsSync(ORIGINALS_SOURCE_DIR)) {
-    await mkdir(path.dirname(ORIGINALS_PUBLIC_DIR), { recursive: true });
-    await cp(ORIGINALS_SOURCE_DIR, ORIGINALS_PUBLIC_DIR, { recursive: true });
+    await mkdir(path.dirname(ORIGINALS_GENERATED_DIR), { recursive: true });
+    await cp(ORIGINALS_SOURCE_DIR, ORIGINALS_GENERATED_DIR, { recursive: true });
   }
 
   if (existsSync(MIRROR_PARASTORAGE_SRC)) {
-    await rm(MIRROR_PARASTORAGE_PUBLIC, { recursive: true, force: true });
-    await cp(MIRROR_PARASTORAGE_SRC, MIRROR_PARASTORAGE_PUBLIC, { recursive: true });
+    await cp(MIRROR_PARASTORAGE_SRC, MIRROR_PARASTORAGE_GENERATED, { recursive: true });
   }
   if (existsSync(MIRROR_WIXSTATIC_SRC)) {
-    await rm(MIRROR_WIXSTATIC_PUBLIC, { recursive: true, force: true });
-    await cp(MIRROR_WIXSTATIC_SRC, MIRROR_WIXSTATIC_PUBLIC, { recursive: true });
+    await cp(MIRROR_WIXSTATIC_SRC, MIRROR_WIXSTATIC_GENERATED, { recursive: true });
   }
 
   const files = await listHtmlFiles(CONTENT_ROOT);
@@ -427,7 +428,7 @@ async function main() {
   await writeFile(OUTPUT_FILE, JSON.stringify(posts, null, 2), "utf-8");
   const withThumb = posts.filter((post) => post.thumbnailUrl).length;
   console.log(
-    `Posts importados a Astro: ${posts.length}. Thumbnails: ${withThumb}/${posts.length}. Mirror raw copiado a public/raw.`
+    `Posts importados: ${posts.length}. Thumbnails: ${withThumb}/${posts.length}. Mirror en .generated/raw.`
   );
 }
 

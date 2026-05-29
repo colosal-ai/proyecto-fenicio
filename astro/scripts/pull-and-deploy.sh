@@ -45,9 +45,8 @@ cd "$REPO_DIR"
 git fetch origin
 git checkout "$BRANCH"
 
-# Limpia artefactos generados que suelen mutar en servidor y bloquear git pull.
-echo "==> Limpieza previa de artefactos generados"
-# public/vendor/ es legado (vendorize deprecado); link:assets usa static.* del repo.
+echo "==> Limpieza previa de artefactos generados (evita conflictos en git pull)"
+bash "$ROOT_DIR/scripts/clean-generated-public.sh"
 
 git pull --ff-only origin "$BRANCH"
 

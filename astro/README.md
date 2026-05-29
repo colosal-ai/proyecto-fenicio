@@ -15,9 +15,12 @@ npm run dev        # http://127.0.0.1:4321/
 
 | Paso | Script | Acción |
 |------|--------|--------|
-| 1 | `sync:content` | `posts.json`, copia mirror → `public/raw`, `originals/`, `static.*` |
-| 2 | `link:assets` | Reescribe URLs en `public/raw` a rutas locales (sin red) |
-| 3 | `build` | Genera `dist/` (sitio estático para producción) |
+| 1 | `sync:content` | `posts.json` + mirror en **`.generated/`** |
+| 2 | `link:assets` | Reescribe HTML en `.generated/raw/` |
+| 3 | `build` | Rutas Astro → `dist/` |
+| 4 | `publish:generated` | `.generated/` → `dist/` (producción) |
+
+`npm run dev` usa `stage:public` (copia temporal a `public/`, gitignored) para servir `/raw/`.
 
 Solo necesita **npm** (para instalar Astro) y **git** con el repo completo; no hace falta `wget` ni acceso a Wix.
 
@@ -102,6 +105,17 @@ git push origin main
 ```bash
 cd /var/www/vhosts/fenicio.es/app/astro
 /opt/plesk/node/24/bin/npm run deploy:server
+```
+
+`deploy:server` ejecuta **`clean:generated`** antes del `git pull` (borra `.generated/` y restos en `public/raw/`).
+
+Si un pull antiguo falló con *“Please commit your changes…”*:
+
+```bash
+cd /var/www/vhosts/fenicio.es/app/astro
+npm run clean:generated
+cd .. && git pull --ff-only origin main
+cd astro && npm run deploy:server
 ```
 
 **Desde tu máquina** (un solo comando vía SSH; no entras al servidor):

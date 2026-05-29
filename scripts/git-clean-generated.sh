@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Quita del índice Git carpetas generadas por Astro (prepare). Los archivos siguen en disco.
+# Quita del índice Git carpetas generadas (histórico). Los archivos locales se pueden borrar con clean:generated.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 paths=(
+  astro/.generated
   astro/public/raw
   astro/public/static.parastorage.com
   astro/public/static.wixstatic.com
@@ -21,11 +22,10 @@ paths=(
 )
 
 for p in "${paths[@]}"; do
-  if git ls-files --error-unmatch "$p" >/dev/null 2>&1 || git ls-files "$p" | grep -q .; then
+  if git ls-files "$p" 2>/dev/null | grep -q .; then
     git rm -r --cached "$p" 2>/dev/null || true
     echo "Deindexado: $p"
   fi
 done
 
-echo "Hecho. Revisa: git status"
-echo "Tras commit, en clone/deploy: cd astro && npm run prepare"
+echo "Hecho. En servidor: cd astro && npm run deploy:server"
