@@ -26,11 +26,15 @@ function navIsCurrent(href: string, pathname: string) {
     <title>{title}</title>
     {canonicalHref && <link rel="canonical" href={canonicalHref} />}
   </head>
-  <body>
+  <body class="fenicio-site">
     {showHeader && (
       <header class="site-header">
         <div class="site-header-inner">
           <a class="site-brand" href="/">Amigos del Fenicio</a>
+          <input type="checkbox" id="site-nav-toggle" class="site-nav-toggle" tabindex="-1" aria-hidden="true" />
+          <label for="site-nav-toggle" class="site-nav-btn" aria-label="Menú de navegación">
+            <span></span><span></span><span></span>
+          </label>
           <nav class="site-nav" aria-label="Principal">
             {NAV.map(({ href, label }) => (
               <a

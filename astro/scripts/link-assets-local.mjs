@@ -81,13 +81,138 @@ const ARCHIVE_LAYOUT_FIX = `<style id="fenicio-archive-layout">
 #SCROLL_TO_TOP,#SCROLL_TO_BOTTOM{display:none!important}
 /* Pie Wix del mirror: vacío pero con franja gris (--color_39); sin JS no aporta */
 #SITE_FOOTER{display:none!important}
-/* Móvil: no re-fluidificar; scroll horizontal del lienzo 980px */
+.fenicio-nav-toggle{
+  position:absolute!important;
+  width:1px!important;
+  height:1px!important;
+  padding:0!important;
+  margin:-1px!important;
+  overflow:hidden!important;
+  clip:rect(0,0,0,0)!important;
+  white-space:nowrap!important;
+  border:0!important;
+}
+.fenicio-nav-btn{display:none}
+/* Móvil/tablet: ancho fluido, menú hamburguesa y texto adaptable */
 @media (max-width:999px){
-html{overflow-x:auto}
-body{min-width:0}
-#SITE_CONTAINER{min-width:980px}
+html,body{overflow-x:hidden;max-width:100%}
+#SITE_CONTAINER,#main_MF,#site-root,#masterPage{width:100%!important;min-width:0!important;max-width:100vw}
+#SITE_HEADER{
+  position:sticky!important;
+  top:0;
+  z-index:200;
+  width:100%!important;
+  background:#fff!important;
+}
+#SITE_HEADER .YmWgf4,#SITE_HEADER .XgJ1FR{width:100%!important;max-width:100%!important}
+#SITE_HEADER [data-mesh-id="SITE_HEADERinlineContent-gridContainer"]{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  position:relative!important;
+  padding:10px 56px 6px 12px!important;
+  box-sizing:border-box;
+  width:100%!important;
+  min-height:52px;
+}
+[data-mesh-id=SITE_HEADERinlineContent-gridContainer]>[id="comp-l2pwao3j"],
+[data-mesh-id=SITE_HEADERinlineContent-gridContainer]>interact-element>[id="comp-l2pwao3j"],
+[data-mesh-id=SITE_HEADERinlineContent-gridContainer]>[id="comp-ju1005uj"],
+[data-mesh-id=SITE_HEADERinlineContent-gridContainer]>interact-element>[id="comp-ju1005uj"]{
+  position:relative!important;
+  left:0!important;
+  margin:0!important;
+  width:100%!important;
+  max-width:100%!important;
+  grid-area:unset!important;
+  justify-self:stretch!important;
+}
+#comp-l2pwao3j{width:100%!important;max-width:100%!important;text-align:center;order:1!important}
+.fenicio-mobile-nav{order:2!important}
+#comp-l2pwao3j h2,#comp-l2pwao3j .font_2{font-size:clamp(26px,7vw,38px)!important;line-height:1.15!important}
+.fenicio-nav-btn{
+  display:flex!important;
+  flex-direction:column;
+  justify-content:center;
+  gap:5px;
+  position:fixed;
+  top:10px;
+  right:10px;
+  width:44px;
+  height:44px;
+  padding:10px;
+  border:1px solid rgba(139,0,0,.35);
+  border-radius:6px;
+  background:#fff;
+  cursor:pointer;
+  box-sizing:border-box;
+  z-index:100001;
+  box-shadow:0 2px 8px rgba(0,0,0,.12);
+}
+.fenicio-nav-btn span{
+  display:block;
+  height:2px;
+  width:100%;
+  background:#8b0000;
+  border-radius:1px;
+  transition:transform .2s ease,opacity .2s ease;
+}
+#comp-ju1005uj,wix-dropdown-menu#comp-ju1005uj{display:none!important}
+.fenicio-mobile-nav{
+  display:none;
+  flex-direction:column;
+  align-items:stretch;
+  gap:0;
+  margin:0;
+  padding:6px 0 10px;
+  list-style:none;
+  border-top:1px solid rgba(139,0,0,.15);
+  background:#fff;
+  width:100%;
+  box-sizing:border-box;
+}
+.fenicio-mobile-nav a{
+  display:block;
+  padding:12px 8px;
+  color:#8b0000!important;
+  text-decoration:none!important;
+  font-size:16px;
+  line-height:1.35;
+  text-align:center;
+  border-top:1px solid rgba(139,0,0,.1);
+}
+.fenicio-mobile-nav a:first-child{border-top:0}
+.fenicio-mobile-nav a:hover{background:rgba(248,244,241,.9)}
+#fenicio-nav-toggle:checked~.fenicio-mobile-nav,
+.fenicio-mobile-nav.fenicio-nav-open{display:flex!important}
+#fenicio-nav-toggle:checked+.fenicio-nav-btn span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+#fenicio-nav-toggle:checked+.fenicio-nav-btn span:nth-child(2){opacity:0}
+#fenicio-nav-toggle:checked+.fenicio-nav-btn span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+#comp-lm3cvp8r,#comp-ljgz0u32{min-width:0!important;width:100%!important;margin:0!important;left:0!important}
+[data-mesh-id$="inlineContent-gridContainer"]>[id^="comp-l"]{margin-left:0!important;margin-right:0!important;width:100%!important;max-width:100%!important}
+#comp-lm3cvp8r img,#comp-ljgz0u32 img,.bgImage img{width:100%!important;height:auto!important;max-width:100%!important;object-fit:cover}
+[data-mesh-id="comp-lm3cvp8rinlineContent"],[data-mesh-id="comp-ljgz0u32inlineContent"]{width:100%!important;max-width:100%!important}
+[data-mesh-id="comp-lm3cvp8rinlineContent"] p,[data-mesh-id="comp-ljgz0u32inlineContent"] p,[data-mesh-id="comp-lm3cvp8rinlineContent"] .font_8,[data-mesh-id="comp-ljgz0u32inlineContent"] .font_8{font-size:clamp(15px,4.2vw,24px)!important;line-height:1.45!important}
+[data-mesh-id="comp-lm3cvp8rinlineContent"] span[style*="font-size"],[data-mesh-id="comp-ljgz0u32inlineContent"] span[style*="font-size"]{font-size:inherit!important}
+#comp-lm3cvp8r [data-mesh-id*="gridContainer"]>[id^="comp-"]{position:relative!important;width:100%!important;left:auto!important;top:auto!important;margin:0!important}
+}
+@media (min-width:1000px){
+.fenicio-mobile-nav{display:none!important}
+#comp-ju1005uj,wix-dropdown-menu#comp-ju1005uj{display:block!important}
 }
 </style>`;
+
+const ARCHIVE_NAV_HEAD = `<input type="checkbox" id="fenicio-nav-toggle" class="fenicio-nav-toggle" tabindex="-1" aria-hidden="true">
+<label for="fenicio-nav-toggle" class="fenicio-nav-btn" aria-label="Menú de navegación" aria-expanded="false"><span></span><span></span><span></span></label>`;
+
+const ARCHIVE_NAV_MENU = `<nav id="fenicio-mobile-nav" class="fenicio-mobile-nav" aria-label="Navegación móvil">
+<a href="/">El Proyecto</a>
+<a href="/equipo.html">El Equipazo</a>
+<a href="/embarcación.html">La Máquina</a>
+<a href="/blog/">El Libro de Bitácora</a>
+</nav>`;
+
+const FENICIO_NAV_SCRIPT = `<script data-fenicio-keep>(()=>{const t=document.getElementById("fenicio-nav-toggle");const n=document.getElementById("fenicio-mobile-nav");const b=document.querySelector(".fenicio-nav-btn");if(!t||!n)return;const sync=()=>{const on=!!t.checked;n.classList.toggle("fenicio-nav-open",on);b?.setAttribute("aria-expanded",on?"true":"false")};t.addEventListener("change",sync);n.querySelectorAll("a").forEach((a)=>a.addEventListener("click",()=>{t.checked=false;sync()}));sync();})();</script>`;
 
 /** Quita el ítem "More" del dropdown Wix en HTML. */
 function removeWixMoreMenuItem(content) {
@@ -95,11 +220,54 @@ function removeWixMoreMenuItem(content) {
 }
 
 function injectArchiveLayoutFix(content) {
-  if (content.includes('id="fenicio-archive-layout"')) return content;
+  if (content.includes('id="fenicio-archive-layout"')) {
+    return content.replace(
+      /<style id="fenicio-archive-layout">[\s\S]*?<\/style>/i,
+      ARCHIVE_LAYOUT_FIX.trim(),
+    );
+  }
   if (/<\/head>/i.test(content)) {
     return content.replace(/<\/head>/i, `${ARCHIVE_LAYOUT_FIX}</head>`);
   }
   return `${ARCHIVE_LAYOUT_FIX}${content}`;
+}
+
+/** Toggle menú móvil en cabecera Wix (título arriba, enlaces debajo, como Wix). */
+function injectArchiveNavToggle(content) {
+  if (!content.includes('id="SITE_HEADER"')) return content;
+
+  content = content.replace(
+    /<div id="SITE_CONTAINER">\s*<input[^>]*id="fenicio-nav-toggle"[^>]*>\s*<label[^>]*class="fenicio-nav-btn"[^>]*>[\s\S]*?<\/label>\s*/i,
+    "<div id=\"SITE_CONTAINER\">",
+  );
+  content = content.replace(/<nav id="fenicio-mobile-nav"[\s\S]*?<\/nav>\s*/gi, "");
+  content = content.replace(
+    /<input[^>]*id="fenicio-nav-toggle"[^>]*>\s*<label[^>]*class="fenicio-nav-btn"[^>]*>[\s\S]*?<\/label>\s*/gi,
+    "",
+  );
+
+  if (content.includes('id="fenicio-nav-toggle"')) return content;
+
+  let updated = content.replace(
+    /<div data-mesh-id="SITE_HEADERinlineContent-gridContainer"[^>]*>/i,
+    (match) => `${match}${ARCHIVE_NAV_HEAD}`,
+  );
+
+  updated = updated.replace(
+    /(<div id="comp-l2pwao3j"[\s\S]*?<\/div>)<!--\/\$-->\s*<!--\$-->\s*<wix-dropdown-menu id="comp-ju1005uj"/i,
+    `$1<!--/$-->${ARCHIVE_NAV_MENU}<!--$--><wix-dropdown-menu id="comp-ju1005uj"`,
+  );
+
+  return updated;
+}
+
+function injectArchiveNavScript(content) {
+  if (!content.includes('id="fenicio-nav-toggle"')) return content;
+  content = content.replace(/<script\b[^>]*data-fenicio-keep[^>]*>[\s\S]*?<\/script>/gi, "");
+  if (/<\/body>/i.test(content)) {
+    return content.replace(/<\/body>/i, `${FENICIO_NAV_SCRIPT}</body>`);
+  }
+  return `${content}${FENICIO_NAV_SCRIPT}`;
 }
 
 /** Crema del tema Wix (--color_11: 248,244,241) semitransparente sobre el bloque de texto. */
@@ -122,9 +290,14 @@ function injectPageTextOverlay(content, relativePath) {
   padding:1.25rem 1.75rem!important;
   box-sizing:border-box;
 }
+@media (max-width:999px){
+[data-mesh-id="${meshId}"]{padding:1rem 4vw!important;width:100%!important;max-width:100%!important}
+}
 </style>`;
 
-  if (content.includes('id="fenicio-text-overlay"')) return content;
+  if (content.includes('id="fenicio-text-overlay"')) {
+    return content.replace(/<style id="fenicio-text-overlay">[\s\S]*?<\/style>/i, overlayStyle.trim());
+  }
   if (/<\/head>/i.test(content)) {
     return content.replace(/<\/head>/i, `${overlayStyle}</head>`);
   }
@@ -273,7 +446,9 @@ function dedupeOriginalsPublicPrefix(content) {
 }
 
 function stripScripts(content) {
-  return content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
+  return content.replace(/<script\b([^>]*)>[\s\S]*?<\/script>/gi, (match, attrs) =>
+    /data-fenicio-keep/i.test(attrs) ? match : "",
+  );
 }
 
 async function walkFiles(dir, extensions, prefix = "") {
@@ -317,8 +492,10 @@ async function main() {
       content = normalizeWixPublicBaseUrls(content, relative);
       content = removeWixMoreMenuItem(content);
       content = injectArchiveLayoutFix(content);
+      content = injectArchiveNavToggle(content);
       content = injectPageTextOverlay(content, relative);
       content = stripScripts(content);
+      content = injectArchiveNavScript(content);
       content = content.replace(
         /(href|src)=["'](?:\.\/)?blog\.html["']/gi,
         (_full, attr) => `${attr}="/blog/"`

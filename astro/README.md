@@ -206,7 +206,7 @@ Comprueba el token real (no `test`): `curl -sI https://fenicio.es/.well-known/ac
 ### Inicio `/` y menú de cabecera
 
 - Tras `prepare`, `publish:generated` copia `index.html`, `equipo.html`, etc. en la **raíz de `dist/`** (mismo HTML que `/raw/`, URL pública `/` o `/equipo.html`).
-- `link:assets` ajusta `externalBaseUrl` a `/`, menú sin JS, oculta «More»; el mirror es **980px fijo** (en móvil: scroll horizontal, sin re-maquetar).
+- `link:assets` ajusta `externalBaseUrl` a `/`, menú sin JS, oculta «More»; en móvil el mirror es **fluido** (sin scroll horizontal): cabecera con hamburguesa y texto con tamaños adaptativos.
 - En dev: `npm run dev` ejecuta `stage:public` y copia esas páginas a `public/*.html` (gitignored; no commitear).
 - **No** uses `redirects` en `astro.config.mjs` para `/`.
 

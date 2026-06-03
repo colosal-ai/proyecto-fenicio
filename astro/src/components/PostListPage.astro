@@ -16,35 +16,40 @@ interface Props {
   basePath: string;
 }
 
-const { posts, totalPosts, currentPage, totalPages, basePath } = Astro.props as Props;
+const { posts, currentPage, totalPages, basePath } = Astro.props as Props;
 const normalizedBasePath = basePath.endsWith("/") ? basePath : `${basePath}/`;
 const prevHref =
   currentPage <= 2 ? normalizedBasePath : `${normalizedBasePath}page/${currentPage - 1}/`;
 const nextHref =
   currentPage < totalPages ? `${normalizedBasePath}page/${currentPage + 1}/` : "";
 ---
-<section class="card">
-  <h1>Las noticias</h1>
-  <p>Total: {totalPosts}</p>
+<section class="card blog-page">
+  <h1>Las Noticias</h1>
   <div class="post-grid">
     {posts.map((post) => (
       <article class="post-card">
         {post.thumbnailUrl && (
-          <a href={`/post/${post.slug}/`} class="post-thumb-link">
-            <img class="post-thumb" src={post.thumbnailUrl} alt={post.title} loading="lazy" />
-          </a>
+          <div class="post-card-media">
+            <a href={`/post/${post.slug}/`} class="post-thumb-link">
+              <img class="post-thumb" src={post.thumbnailUrl} alt={post.title} loading="lazy" />
+            </a>
+          </div>
         )}
-        <h2><a href={`/post/${post.slug}/`}>{post.title}</a></h2>
-        {post.publishedAt && <p class="post-meta">{post.publishedAt}</p>}
-        {post.youtubeUrl && (
-          <p><a href={post.youtubeUrl} target="_blank" rel="noopener noreferrer">{post.youtubeUrl}</a></p>
-        )}
-        {post.excerpt && <p>{post.excerpt}</p>}
+        <div class="post-card-body">
+          <h2><a href={`/post/${post.slug}/`}>{post.title}</a></h2>
+          {post.publishedAt && <p class="post-meta">{post.publishedAt}</p>}
+          {post.excerpt && <p class="post-excerpt">{post.excerpt}</p>}
+          {post.youtubeUrl && (
+            <p class="post-youtube">
+              <a href={post.youtubeUrl} target="_blank" rel="noopener noreferrer">Ver en YouTube</a>
+            </p>
+          )}
+        </div>
       </article>
     ))}
   </div>
   {totalPages > 1 && (
-    <nav class="pagination">
+    <nav class="pagination" aria-label="Paginación del blog">
       {currentPage > 1 ? (
         <a class="pagination-link" href={prevHref}>Anterior</a>
       ) : (
